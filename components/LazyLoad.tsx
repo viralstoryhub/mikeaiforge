@@ -1,5 +1,5 @@
 import React, { Suspense, ComponentType } from 'react';
-import { Skeletons } from './Skeletons';
+import * as Skeletons from './Skeletons';
 
 interface LazyLoadProps {
   component: React.LazyExoticComponent<ComponentType<any>>;

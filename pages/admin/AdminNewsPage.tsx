@@ -92,17 +92,13 @@ const AdminNewsPage: React.FC = () => {
             : featuredFilter === 'featured'
             ? true
             : false,
-        sort: sortBy,
+        sortBy: sortBy,
       });
 
-      const items =
-        response?.data ??
-        response?.articles ??
-        response?.items ??
-        (Array.isArray(response) ? response : []);
+      const items = response?.items ?? (Array.isArray(response) ? response : []);
       setArticles(items);
 
-      const meta = response?.meta ?? response?.pagination ?? response?.metaData;
+      const meta = response?.pagination;
       setPagination(normalizePagination(meta, items.length));
     } catch (error: any) {
       addToast(error?.message ?? 'Failed to load news articles.', 'error');

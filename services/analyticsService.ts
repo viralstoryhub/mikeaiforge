@@ -39,7 +39,7 @@ if (MIXPANEL_TOKEN && typeof window !== 'undefined') {
       a.mixpanel = b;
       b._i = [];
       b.init = function (a: string, c: any, d?: string) {
-        function e(b: string, a: any) {
+        function e(b: any, a: any) {
           const c = a.split('.');
           if (c.length === 2) {
             b = b[c[0]];
@@ -49,7 +49,7 @@ if (MIXPANEL_TOKEN && typeof window !== 'undefined') {
             b.push([a].concat(Array.prototype.slice.call(arguments, 0)));
           };
         }
-        let f = b;
+        let f: any = b;
         if (typeof d !== 'undefined') {
           f = b[d] = [];
         } else {
@@ -79,10 +79,7 @@ if (MIXPANEL_TOKEN && typeof window !== 'undefined') {
       c = f.createElement('script');
       c.type = 'text/javascript';
       c.async = true;
-      c.src =
-        typeof MIXPANEL_CUSTOM_LIB_URL !== 'undefined'
-          ? MIXPANEL_CUSTOM_LIB_URL
-          : 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
+      c.src = 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
       d = f.getElementsByTagName('script')[0];
       d.parentNode?.insertBefore(c, d);
     }

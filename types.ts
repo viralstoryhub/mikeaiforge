@@ -53,6 +53,7 @@ export interface ForumCategory {
   icon?: string;
   threadCount: number;
   postCount: number;
+  displayOrder?: number;
 }
 
 export interface ForumThread {
@@ -149,7 +150,7 @@ export interface User {
   stripeSubscriptionId?: string;
 }
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export interface ToastMessage {
   id: number;

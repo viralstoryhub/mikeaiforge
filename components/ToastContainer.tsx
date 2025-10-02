@@ -8,6 +8,7 @@ const ICONS: Record<ToastType, React.ReactNode> = {
   success: <SuccessIcon className="w-6 h-6 text-green-500" />,
   error: <ErrorIcon className="w-6 h-6 text-red-500" />,
   info: <InfoIcon className="w-6 h-6 text-blue-500" />,
+  warning: <InfoIcon className="w-6 h-6 text-yellow-500" />,
 };
 
 const Toast: React.FC<{ toast: ToastMessage; onRemove: (id: number) => void }> = ({ toast, onRemove }) => {

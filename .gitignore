@@ -62,3 +62,4 @@ temp/
 .parcel-cache/
 .vercel
 .turbo
+node_modules

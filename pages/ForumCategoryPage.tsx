@@ -294,15 +294,18 @@ const ForumCategoryPage: React.FC = () => {
 
     let createdSlug: string | undefined;
 
-    if (createdThread && 'slug' in createdThread && createdThread.slug) {
-      createdSlug = createdThread.slug;
+    if (createdThread && typeof createdThread === 'object' && 'slug' in createdThread && typeof (createdThread as any).slug === 'string') {
+      createdSlug = (createdThread as any).slug;
     } else if (
       createdThread &&
+      typeof createdThread === 'object' &&
       'thread' in createdThread &&
       createdThread.thread &&
-      createdThread.thread.slug
+      typeof createdThread.thread === 'object' &&
+      'slug' in createdThread.thread &&
+      typeof (createdThread.thread as any).slug === 'string'
     ) {
-      createdSlug = createdThread.thread.slug;
+      createdSlug = (createdThread.thread as any).slug;
     }
 
     setIsComposerOpen(false);

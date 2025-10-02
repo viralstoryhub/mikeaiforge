@@ -7,7 +7,10 @@ import { LockIcon, CheckIcon } from '../../components/icons/UtilityIcons';
 import { MicrophoneIcon } from '../../components/icons/ExtraIcons';
 import { connectLiveSession, createBlob, analyzePresentationTranscript } from '../../services/geminiService';
 import { PresentationFeedback } from '../../types';
-import type { LiveSession, LiveServerMessage } from '@google/genai';
+// LiveSession and LiveServerMessage types removed from @google/genai exports
+// Using any types as fallback until package is updated
+type LiveSession = any;
+type LiveServerMessage = any;
 
 type Status = 'idle' | 'requesting_mic' | 'listening' | 'analyzing' | 'results' | 'error';
 

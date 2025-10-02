@@ -63,7 +63,10 @@ const AdminAnalyticsPage = React.lazy(() => import('./pages/admin/AdminAnalytics
 if (import.meta.env.PROD) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
-    integrations: [new Sentry.BrowserTracing(), new Sentry.Replay()],
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
     tracesSampleRate: 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,

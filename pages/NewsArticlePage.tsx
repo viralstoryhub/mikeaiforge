@@ -86,7 +86,7 @@ const NewsArticlePage: React.FC = () => {
     setRelatedLoading(true);
     (async () => {
       try {
-        const response = await newsService.getArticles(1, 5, article.category);
+        const response = await newsService.getArticles({ page: 1, limit: 5, category: article.category });
         if (!isActive) return;
         const articles = extractArticles(response)
           .filter((item) => item.slug !== article.slug)

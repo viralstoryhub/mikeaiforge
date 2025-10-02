@@ -1,8 +1,13 @@
 
 
-import { GoogleGenAI, Chat, HarmCategory, HarmBlockThreshold, GenerateContentResponse, Content, Type, Modality, Part, LiveSession, LiveServerMessage, Blob } from "@google/genai";
+import { GoogleGenAI, Chat, HarmCategory, HarmBlockThreshold, GenerateContentResponse, Content, Type, Modality, Part, Blob } from "@google/genai";
 import type { AIPersona, RepurposedContent, PresentationFeedback } from '../types';
 import { apiClient } from './apiClient';
+
+// LiveSession and LiveServerMessage types removed from @google/genai exports
+// Using any types as fallback until package is updated
+type LiveSession = any;
+type LiveServerMessage = any;
 
 let ai: GoogleGenAI | null = null;
 let chatSession: Chat | null = null;

@@ -169,7 +169,7 @@ const HomePage: React.FC = () => {
         }
 
         if (!articles.length) {
-          const articlesResponse = await newsService.getArticles(1, 3);
+          const articlesResponse = await newsService.getArticles({ page: 1, limit: 3 });
           articles = extractCollection<NewsArticlePreview>(articlesResponse);
         }
 
