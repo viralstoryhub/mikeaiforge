@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.20.0",
-    "@sentry/react": "^7.99.0",
+    "@sentry/react": "^8.0.0",
     "@uiw/react-markdown-preview": "^5.3.1",
     "@uiw/react-md-editor": "^3.30.0",
     "axios": "^1.6.5",
