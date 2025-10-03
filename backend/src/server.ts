@@ -27,6 +27,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.API_PORT || 5000;
 
+// Trust proxy - required for services behind a proxy (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(
