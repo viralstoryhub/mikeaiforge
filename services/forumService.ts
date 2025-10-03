@@ -62,6 +62,27 @@ export interface UpdateThreadPayload {
   content?: string;
 }
 
+// Admin functions interfaces
+export interface AdminThreadQuery {
+  categorySlug?: string;
+  status?: 'pinned' | 'locked';
+  search?: string;
+  limit?: number;
+}
+
+export interface AdminThreadsResponse {
+  threads: ForumThread[];
+  total?: number;
+}
+
+export interface CategoryPayload {
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  displayOrder?: number;
+}
+
 export const getCategories = async (): Promise<ForumCategory[]> => {
   try {
     const response = await apiClient.get<ApiResponse<ForumCategory[]>>('/forum/categories');
@@ -176,18 +197,85 @@ export const deletePost = async (postId: string): Promise<void> => {
   }
 };
 
-export const togglePinThread = async (threadId: string): Promise<ForumThread> => {
+export const togglePinThread = async (threadId: string, value?: boolean): Promise<ForumThread> => {
   try {
-    const response = await apiClient.patch<ApiResponse<ForumThread>>(`/forum/threads/${threadId}/pin`, {});
+    const response = await apiClient.patch<ApiResponse<ForumThread>>(`/forum/threads/${threadId}/pin`, {
+      isPinned: value
+    });
     return unwrapResponse(response);
   } catch (error) {
     return handleApiError(error);
   }
 };
 
-export const toggleLockThread = async (threadId: string): Promise<ForumThread> => {
+export const toggleLockThread = async (threadId: string, value?: boolean): Promise<ForumThread> => {
   try {
-    const response = await apiClient.patch<ApiResponse<ForumThread>>(`/forum/threads/${threadId}/lock`, {});
+    const response = await apiClient.patch<ApiResponse<ForumThread>>(`/forum/threads/${threadId}/lock`, {
+      isLocked: value
+    });
+    return unwrapResponse(response);
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+// Admin functions
+export const getAdminThreads = async (
+  params?: AdminThreadQuery
+): Promise<AdminThreadsResponse> => {
+  try {
+    const response = await apiClient.get<ApiResponse<AdminThreadsResponse>>('/forum/admin/threads', {
+      params
+    });
+    return unwrapResponse(response);
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const createCategory = async (payload: CategoryPayload): Promise<ForumCategory> => {
+  try {
+    const response = await apiClient.post<ApiResponse<ForumCategory>>('/forum/admin/categories', payload);
+    return unwrapResponse(response);
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const updateCategory = async (
+  id: string,
+  payload: Partial<CategoryPayload>
+): Promise<ForumCategory> => {
+  try {
+    const response = await apiClient.patch<ApiResponse<ForumCategory>>(`/forum/admin/categories/${id}`, payload);
+    return unwrapResponse(response);
+  } catch (error) {
+    return handleApiError(error);
+  }
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  try {
+    await apiClient.delete(`/forum/admin/categories/${id}`);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const bulkUpdateThreads = async (
+  ids: string[],
+  payload: Partial<ForumThread>
+): Promise<void> => {
+  try {
+    await apiClient.patch('/forum/admin/threads/bulk', { ids, ...payload });
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const getFlaggedPosts = async (): Promise<ForumPost[]> => {
+  try {
+    const response = await apiClient.get<ApiResponse<ForumPost[]>>('/forum/admin/flagged-posts');
     return unwrapResponse(response);
   } catch (error) {
     return handleApiError(error);
@@ -206,6 +294,13 @@ export const forumService = {
   deletePost,
   togglePinThread,
   toggleLockThread,
+  // Admin functions
+  getAdminThreads,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  bulkUpdateThreads,
+  getFlaggedPosts,
 };
 
 export default forumService;

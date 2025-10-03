@@ -28,13 +28,14 @@ model User {
   updatedAt              DateTime @updatedAt
   lastLoginAt            DateTime?
 
-  savedTools   SavedTool[]
-  utilityUsage UtilityUsage[]
-  personas     AIPersona[]
-  chatSessions ChatSession[]
-  apiKeys      ApiKey[]
-  forumThreads ForumThread[] @relation("UserForumThreads")
-  forumPosts   ForumPost[]   @relation("UserForumPosts")
+  savedTools       SavedTool[]
+  utilityUsage     UtilityUsage[]
+  personas         AIPersona[]
+  chatSessions     ChatSession[]
+  apiKeys          ApiKey[]
+  forumThreads     ForumThread[]     @relation("UserForumThreads")
+  forumPosts       ForumPost[]       @relation("UserForumPosts")
+  analyticsEvents  AnalyticsEvent[]
 
   @@index([email])
   @@index([stripeCustomerId])
@@ -249,5 +250,24 @@ model AuditLog {
 
   @@index([userId])
   @@index([action])
+  @@index([createdAt])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  eventName  String
+  userId     String?
+  sessionId  String?
+  properties String
+  page       String?
+  referrer   String?
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventName])
+  @@index([userId])
   @@index([createdAt])
 }

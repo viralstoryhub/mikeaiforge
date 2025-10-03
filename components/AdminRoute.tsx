@@ -22,7 +22,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (currentUser.role !== 'Admin') {
+  if (currentUser.role?.toUpperCase() !== 'ADMIN') {
     // If a non-admin user tries to access an admin route, redirect them to the home page.
     return <Navigate to="/" replace />;
   }

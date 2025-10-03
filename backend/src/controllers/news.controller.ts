@@ -95,10 +95,16 @@ export const getArticles = async (req: Request, res: Response, next: NextFunctio
       prisma.newsArticle.count({ where: filters }),
     ]);
 
+    // Transform tags from string to array for frontend
+    const transformedItems = items.map(item => ({
+      ...item,
+      tags: item.tags ? item.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+    }));
+
     res.json({
       status: 'success',
       data: {
-        items,
+        items: transformedItems,
         pagination: {
           page: pageNumber,
           limit: perPage,

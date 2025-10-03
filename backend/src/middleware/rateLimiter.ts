@@ -117,17 +117,29 @@ const getRedisStore = (prefix: string): any => {
 
 // Rate limiter with fallback to in-memory store if Redis is unavailable
 export const rateLimiter = rateLimit({
-  store: getRedisStore('rl:'),
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting in development if Redis is unavailable
+    if (process.env.NODE_ENV === 'development' && !isRedisAvailable) {
+      return true;
+    }
+    return false;
+  },
 });
 
 export const strictRateLimiter = rateLimit({
-  store: getRedisStore('rl:strict:'),
   windowMs: 60000, // 1 minute
   max: 5,
   message: 'Too many requests, please slow down.',
+  skip: (req) => {
+    // Skip rate limiting in development if Redis is unavailable
+    if (process.env.NODE_ENV === 'development' && !isRedisAvailable) {
+      return true;
+    }
+    return false;
+  },
 });

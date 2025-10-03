@@ -703,3 +703,174 @@ export const toggleLockThread = async (req: AuthRequest, res: Response, next: Ne
     next(error);
   }
 };
+
+// Admin endpoints
+export const getAdminThreads = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !isAdminUser(req)) {
+      throw new AppError('Administrator privileges required', 403);
+    }
+
+    const { categorySlug, status, search, limit } = req.query;
+    const take = limit ? Math.min(Number(limit), MAX_LIMIT) : 100;
+
+    const where: Prisma.ForumThreadWhereInput = {};
+
+    if (categorySlug && typeof categorySlug === 'string') {
+      const category = await prisma.forumCategory.findUnique({
+        where: { slug: categorySlug },
+        select: { id: true },
+      });
+      if (category) {
+        where.categoryId = category.id;
+      }
+    }
+
+    if (status === 'pinned') {
+      where.isPinned = true;
+    } else if (status === 'locked') {
+      where.isLocked = true;
+    }
+
+    if (search && typeof search === 'string') {
+      where.OR = [
+        { title: { contains: search } },
+        { author: { name: { contains: search } } },
+      ];
+    }
+
+    const threads = await prisma.forumThread.findMany({
+      where,
+      take,
+      orderBy: { lastActivityAt: 'desc' },
+      include: {
+        author: { select: authorSelect },
+        category: { select: categorySelect },
+      },
+    });
+
+    res.json({
+      status: 'success',
+      data: { threads, total: threads.length },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createCategory = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !isAdminUser(req)) {
+      throw new AppError('Administrator privileges required', 403);
+    }
+
+    const { name, slug, description, icon, displayOrder } = req.body;
+
+    const category = await prisma.forumCategory.create({
+      data: {
+        name,
+        slug,
+        description: description || null,
+        icon: icon || null,
+        displayOrder: displayOrder || 999,
+      },
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: category,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateCategory = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !isAdminUser(req)) {
+      throw new AppError('Administrator privileges required', 403);
+    }
+
+    const { categoryId } = req.params;
+    const { name, slug, description, icon, displayOrder } = req.body;
+
+    const data: Prisma.ForumCategoryUpdateInput = {};
+    if (name) data.name = name;
+    if (slug) data.slug = slug;
+    if (description !== undefined) data.description = description || null;
+    if (icon !== undefined) data.icon = icon || null;
+    if (displayOrder !== undefined) data.displayOrder = displayOrder;
+
+    const category = await prisma.forumCategory.update({
+      where: { id: categoryId },
+      data,
+    });
+
+    res.json({
+      status: 'success',
+      data: category,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteCategory = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !isAdminUser(req)) {
+      throw new AppError('Administrator privileges required', 403);
+    }
+
+    const { categoryId } = req.params;
+
+    await prisma.forumCategory.delete({
+      where: { id: categoryId },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateThreads = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !isAdminUser(req)) {
+      throw new AppError('Administrator privileges required', 403);
+    }
+
+    const { ids, isPinned, isLocked } = req.body;
+
+    const data: Prisma.ForumThreadUpdateManyMutationInput = {};
+    if (isPinned !== undefined) data.isPinned = isPinned;
+    if (isLocked !== undefined) data.isLocked = isLocked;
+
+    await prisma.forumThread.updateMany({
+      where: { id: { in: ids } },
+      data,
+    });
+
+    res.json({
+      status: 'success',
+      message: `${ids.length} thread(s) updated successfully`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFlaggedPosts = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || !isAdminUser(req)) {
+      throw new AppError('Administrator privileges required', 403);
+    }
+
+    // For now, return empty array as flagging system isn't implemented yet
+    res.json({
+      status: 'success',
+      data: [],
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -8,20 +8,144 @@ interface AnalyticsEvent {
   properties?: Record<string, any>;
 }
 
-// Initialize Google Analytics
-if (GA_MEASUREMENT_ID && typeof window !== 'undefined') {
+// Internal flags to ensure initialization only happens once
+let isGAInitialized = false;
+let routeListenerAttached = false;
+
+/**
+ * Inject the GA script tag if not already present.
+ * This is idempotent and will not append multiple script tags.
+ */
+function injectGAScript(): void {
+  if (typeof window === 'undefined' || !GA_MEASUREMENT_ID) return;
+
+  const src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+  const existing = Array.from(document.getElementsByTagName('script')).find((s) =>
+    s.src?.includes(src)
+  );
+  if (existing) return;
+
   const script = document.createElement('script');
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+  script.src = src;
   document.head.appendChild(script);
+}
 
+/**
+ * Sets up the window.dataLayer and window.gtag function if not already defined.
+ * Calls the basic gtag initialization (js + config).
+ */
+function setupGtag(): void {
+  if (typeof window === 'undefined' || !GA_MEASUREMENT_ID) return;
+
+  // Ensure dataLayer exists
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: any[]) {
-    window.dataLayer.push(args);
+
+  // If gtag already exists, do not overwrite it (idempotent)
+  if (!window.gtag) {
+    function gtag(...args: any[]) {
+      window.dataLayer.push(args);
+    }
+    window.gtag = gtag;
   }
-  gtag('js', new Date());
-  gtag('config', GA_MEASUREMENT_ID);
-  window.gtag = gtag;
+
+  try {
+    // Fire basic gtag initialization - this is safe to call multiple times,
+    // but we guard with isGAInitialized to avoid duplicate init calls.
+    if (!isGAInitialized) {
+      window.gtag('js', new Date());
+      window.gtag('config', GA_MEASUREMENT_ID);
+      isGAInitialized = true;
+    }
+  } catch (err) {
+    // Swallow errors - not critical for app flow
+    // eslint-disable-next-line no-console
+    console.error('Failed to initialize gtag:', err);
+  }
+}
+
+/**
+ * Attach listeners to capture SPA route changes and emit page_view events.
+ * This is idempotent; multiple calls will not attach duplicate listeners.
+ */
+function attachRouteChangeListener(): void {
+  if (typeof window === 'undefined' || routeListenerAttached) return;
+
+  const handleRouteChange = () => {
+    try {
+      const path = window.location.pathname + window.location.search;
+      // Use existing helper to track page view
+      trackPageView(path);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error handling route change for analytics:', err);
+    }
+  };
+
+  try {
+    // Wrap pushState
+    const originalPushState = history.pushState;
+    history.pushState = function (this: History, ...args: any[]) {
+      // Call original
+      originalPushState.apply(this, args as any);
+      // Trigger handler asynchronously to ensure location is updated
+      setTimeout(handleRouteChange, 0);
+    };
+
+    // Wrap replaceState
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function (this: History, ...args: any[]) {
+      originalReplaceState.apply(this, args as any);
+      setTimeout(handleRouteChange, 0);
+    };
+
+    // popstate for back/forward navigation
+    window.addEventListener('popstate', handleRouteChange);
+
+    routeListenerAttached = true;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to attach route change listeners for analytics:', err);
+  }
+}
+
+/**
+ * Public function to initialize analytics (GA + route tracking).
+ * - Ensures GA script is injected only once
+ * - Ensures gtag is setup only once
+ * - Attaches SPA route change listeners to track page views
+ *
+ * Call this as early as possible in your app startup (e.g., App.tsx entry).
+ */
+export function initializeAnalytics(): void {
+  if (typeof window === 'undefined') return;
+
+  if (!GA_MEASUREMENT_ID) {
+    // No GA configured; nothing to initialize
+    return;
+  }
+
+  injectGAScript();
+  setupGtag();
+  attachRouteChangeListener();
+}
+
+/**
+ * Returns true if analytics (GA) appears to be configured and initialized.
+ */
+export function isAnalyticsConfigured(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!GA_MEASUREMENT_ID && !!window.gtag && isGAInitialized;
+}
+
+// Initialize Google Analytics immediately if measurement ID is present
+// This preserves existing behavior while still allowing explicit initializeAnalytics() calls.
+if (GA_MEASUREMENT_ID && typeof window !== 'undefined') {
+  injectGAScript();
+  setupGtag();
+  // Do not automatically attach route listeners here to avoid double-attaching
+  // if initializeAnalytics() is called explicitly later. Attach here only if not already attached.
+  attachRouteChangeListener();
 }
 
 // Initialize Mixpanel (if token provided)
@@ -106,7 +230,7 @@ export const trackEvent = (eventName: string, properties: Record<string, any> = 
 
   apiClient
     .post('/analytics/track', {
-      event: eventName,
+      eventName: eventName,
       properties,
     })
     .catch((error) => {

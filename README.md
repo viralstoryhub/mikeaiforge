@@ -17,6 +17,69 @@ A production-ready AI-powered content creation platform built with React, TypeSc
 
 > These enhancements deliver a mind-blowing community-driven experience that keeps creators informed and connected.
 
+## Admin Dashboard
+
+The project includes a production-grade Admin Dashboard designed to give site administrators full control and visibility over the platform.
+
+Key features:
+- Comprehensive statistics
+  - Total users, new signups, subscription breakdown (free vs. pro)
+  - Tools, workflows, news articles, forum threads/posts counts
+  - Revenue metrics (MRR, total revenue) if Stripe is configured
+  - User growth trends and engagement metrics
+- User management
+  - View user profiles and related data (saved tools, personas, sessions)
+  - Edit user data (name, bio, role, subscription tier)
+  - Soft-delete or hard-delete users and cascade related content where appropriate
+- Content management
+  - Manage tools, workflows, news articles, and forum content from the admin console
+  - Pin/lock forum threads, moderate posts, and manage categories
+- Internal analytics
+  - Utility usage tracking (counts and trends)
+  - Tool popularity and top-performing workflows
+  - Stored analytics events for custom reporting
+- Google Analytics integration
+  - Backend proxy to GA4 Data API for secure admin-only reporting
+  - Real-time visitor counts and active pages
+  - Overview, engagement, traffic sources, and top pages reports
+- System health monitoring
+  - Database connectivity checks, API response time, uptime, and error-rate indicators
+  - Auto-refreshing health checks and last-updated timestamps
+- Audit logs & activity feed
+  - Timeline of admin and user actions (role changes, content edits, etc.)
+  - Filterable audit log with pagination and export options
+
+### Google Analytics Setup
+
+Google Analytics integration is optional but provides powerful insights in the Admin Dashboard. See the detailed setup guide for step-by-step instructions:
+
+- Full setup guide: docs/GOOGLE_ANALYTICS_SETUP.md
+
+Required environment variables (backend & frontend):
+- VITE_GA_MEASUREMENT_ID (frontend) — GA4 Measurement ID for client-side tracking (format: G-XXXXXXXXXX)
+- GOOGLE_ANALYTICS_PROPERTY_ID (backend) — Numeric GA4 property ID used by the Data API
+- GOOGLE_ANALYTICS_CREDENTIALS_PATH (backend) — Path to the service account JSON credentials (e.g. ./google-analytics-credentials.json)
+- GOOGLE_ANALYTICS_VIEW_ID (optional legacy) — (Optional) Universal Analytics view ID if using legacy reporting
+
+Notes:
+- The backend uses a service account JSON key to authenticate with the Google Analytics Data API. Never commit this file to the repository — add it to .gitignore.
+- Follow the docs/GOOGLE_ANALYTICS_SETUP.md guide to create the service account, grant Viewer access to the GA4 property, and configure the .env file.
+
+### Admin Access
+
+How to grant admin privileges:
+- Set a user's role to an admin role in the database. Depending on your schema the role may be a string or an enum; commonly the value used is `ADMIN` or `admin`.
+  - Example (SQL): UPDATE users SET role = 'ADMIN' WHERE email = 'user@example.com';
+  - Example (Prisma): await prisma.user.update({ where: { id: '...' }, data: { role: 'ADMIN' } })
+- Check backend seed files (e.g., backend/prisma/seed.ts or similar) for any seeded admin account details.
+
+Default/mock credentials:
+- In development, a seed script or mock auth may create an admin account for convenience. Check the backend seed file for the exact credentials. If your local seed includes a sample admin, common dev credentials used in examples are `admin@example.com` with a simple password — change these immediately in production environments.
+
+Security reminder:
+- Always use strong passwords and rotate service account keys regularly.
+- Limit service account permissions to Viewer for GA4 property access used by the admin dashboard.
+
 ## 🏗️ Tech Stack
 
 ### Frontend

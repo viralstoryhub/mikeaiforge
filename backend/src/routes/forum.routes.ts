@@ -134,4 +134,80 @@ router.patch(
   forumController.toggleLockThread
 );
 
+// Admin endpoints
+router.get(
+  '/admin/threads',
+  authenticate,
+  requireAdmin,
+  [
+    query('categorySlug').optional().trim(),
+    query('status').optional().isIn(['pinned', 'locked']),
+    query('search').optional().trim(),
+    query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  ],
+  validate,
+  forumController.getAdminThreads
+);
+
+router.post(
+  '/admin/categories',
+  authenticate,
+  requireAdmin,
+  [
+    body('name').trim().notEmpty().withMessage('Category name is required'),
+    body('slug').trim().notEmpty().withMessage('Slug is required'),
+    body('description').optional().trim(),
+    body('icon').optional().trim(),
+    body('displayOrder').optional().isInt({ min: 1 }).toInt(),
+  ],
+  validate,
+  forumController.createCategory
+);
+
+router.patch(
+  '/admin/categories/:categoryId',
+  authenticate,
+  requireAdmin,
+  [
+    param('categoryId').isUUID().withMessage('Invalid category ID'),
+    body('name').optional().trim(),
+    body('slug').optional().trim(),
+    body('description').optional().trim(),
+    body('icon').optional().trim(),
+    body('displayOrder').optional().isInt({ min: 1 }).toInt(),
+  ],
+  validate,
+  forumController.updateCategory
+);
+
+router.delete(
+  '/admin/categories/:categoryId',
+  authenticate,
+  requireAdmin,
+  [param('categoryId').isUUID().withMessage('Invalid category ID')],
+  validate,
+  forumController.deleteCategory
+);
+
+router.patch(
+  '/admin/threads/bulk',
+  authenticate,
+  requireAdmin,
+  [
+    body('ids').isArray().withMessage('Thread IDs array is required'),
+    body('ids.*').isUUID().withMessage('Invalid thread ID'),
+    body('isPinned').optional().isBoolean(),
+    body('isLocked').optional().isBoolean(),
+  ],
+  validate,
+  forumController.bulkUpdateThreads
+);
+
+router.get(
+  '/admin/flagged-posts',
+  authenticate,
+  requireAdmin,
+  forumController.getFlaggedPosts
+);
+
 export default router;

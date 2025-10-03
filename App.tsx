@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
@@ -54,6 +53,7 @@ const AdminWorkflowsPage = React.lazy(() => import('./pages/admin/AdminWorkflows
 const AdminForumPage = React.lazy(() => import('./pages/admin/AdminForumPage'));
 const AdminNewsPage = React.lazy(() => import('./pages/admin/AdminNewsPage'));
 const AdminAnalyticsPage = React.lazy(() => import('./pages/admin/AdminAnalyticsPage'));
+const AdminGoogleAnalyticsPage = React.lazy(() => import('./pages/admin/AdminGoogleAnalyticsPage'));
 
 /**
  * Initialize Sentry only in production to capture errors, session replays, and trace data.
@@ -94,6 +94,7 @@ const App: React.FC = () => {
                             <Routes>
                               <Route path="dashboard" element={<AdminDashboardPage />} />
                               <Route path="analytics" element={<AdminAnalyticsPage />} />
+                              <Route path="google-analytics" element={<AdminGoogleAnalyticsPage />} />
                               <Route path="users" element={<AdminUsersPage />} />
                               <Route path="tools" element={<AdminToolsPage />} />
                               <Route path="workflows" element={<AdminWorkflowsPage />} />

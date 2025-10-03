@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mike's AI Forge</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Analytics - Configured via environment variable -->
+    <script>
+      // This will be replaced by Vite with the actual env variable
+      const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+      if (GA_ID) {
+        // Script injection will be handled by analyticsService.ts
+      }
+    </script>
     <script>
       tailwind.config = {
         theme: {

@@ -30,7 +30,7 @@ const UserMenu: React.FC = () => {
 
   if (!auth?.currentUser) return null;
   const { currentUser } = auth;
-  const isAdmin = currentUser.role === 'Admin';
+  const isAdmin = currentUser.role === 'ADMIN';
 
   return (
     <div className="relative" ref={menuRef}>
@@ -50,14 +50,14 @@ const UserMenu: React.FC = () => {
             </p>
             <p className="text-sm text-light-secondary truncate">{currentUser.email}</p>
           </div>
-          {isAdmin && (
-              <Link to="/admin/dashboard" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-light-secondary hover:bg-dark-primary/50 hover:text-light-primary">
-                Admin Dashboard
-              </Link>
-          )}
           <Link to="/dashboard" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-light-secondary hover:bg-dark-primary/50 hover:text-light-primary">
             My Dashboard
           </Link>
+          {isAdmin && (
+              <Link to="/admin/dashboard" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-light-secondary hover:bg-dark-primary/50 hover:text-light-primary">
+                Admin Panel
+              </Link>
+          )}
           <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-dark-primary/50">
             Logout
           </button>
@@ -106,7 +106,7 @@ const Header: React.FC = () => {
     }
   };
   
-  const isAdmin = auth?.currentUser?.role === 'Admin';
+  const isAdmin = auth?.currentUser?.role === 'ADMIN';
 
   return (
     <header className="bg-dark-primary/80 backdrop-blur-md sticky top-0 z-50 border-b border-border-dark">
@@ -226,10 +226,10 @@ const Header: React.FC = () => {
                                 <div className="text-sm font-medium text-light-secondary">{auth.currentUser.email}</div>
                             </div>
                         </div>
-                        {isAdmin && (
-                            <NavLink to="/admin/dashboard" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Admin Dashboard</NavLink>
-                        )}
                         <NavLink to="/dashboard" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>My Dashboard</NavLink>
+                        {isAdmin && (
+                            <NavLink to="/admin/dashboard" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Admin Panel</NavLink>
+                        )}
                         <button onClick={handleMobileLogout} className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:bg-dark-secondary">
                             Logout
                         </button>
