@@ -327,20 +327,14 @@ const NewsArticlePage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => handleShare('twitter')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border-dark text-sm font-medium text-light-secondary hover:text-light-primary hover:border-brand-primary transition"
+          <a
+            href={article.sourceUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition shadow-lg"
           >
-            <span>🐦</span> Share on Twitter
-          </button>
-          <button
-            type="button"
-            onClick={() => handleShare('linkedin')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border-dark text-sm font-medium text-light-secondary hover:text-light-primary hover:border-brand-primary transition"
-          >
-            <span>💼</span> Share on LinkedIn
-          </button>
+            Read Original Article
+          </a>
           <button
             type="button"
             onClick={() => handleShare('copy')}
