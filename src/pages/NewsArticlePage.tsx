@@ -243,6 +243,16 @@ const NewsArticlePage: React.FC = () => {
     return null;
     }
 
+  // Normalize ALL potential arrays immediately
+  const safeArticle = {
+    ...article,
+    tags: toArray<string>(article.tags, { csv: true }),
+    summaryBullets: toArray<string>((article as any).summaryBullets, { fallback: toArray<string>(article.summary, { split: '\n' }) }),
+    images: toArray<string>((article as any).images ?? article.imageUrl),
+    relatedArticles: toArray<NewsArticle>(relatedArticles),
+    paragraphs: toArray<string>(article.content, { split: '\n\n' }),
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 lg:px-0 py-12 lg:py-16">
       <nav className="text-sm text-light-tertiary flex flex-wrap items-center gap-2 mb-8">
@@ -251,20 +261,20 @@ const NewsArticlePage: React.FC = () => {
         </Link>
         <span>/</span>
         <Link
-          to={`/news?category=${encodeURIComponent(article.category)}`}
+          to={`/news?category=${encodeURIComponent(safeArticle.category)}`}
           className="hover:text-brand-primary transition"
         >
-          {article.category}
+          {safeArticle.category}
         </Link>
         <span>/</span>
-        <span className="text-light-secondary truncate">{article.title}</span>
+        <span className="text-light-secondary truncate">{safeArticle.title}</span>
       </nav>
 
-      {article.imageUrl ? (
+      {safeArticle.imageUrl ? (
         <div className="w-full overflow-hidden rounded-3xl border border-border-dark shadow-xl mb-8">
           <img
-            src={article.imageUrl}
-            alt={article.title}
+            src={safeArticle.imageUrl}
+            alt={safeArticle.title}
             className="w-full h-full object-cover max-h-[420px]"
             loading="lazy"
           />
@@ -278,9 +288,9 @@ const NewsArticlePage: React.FC = () => {
       <header className="space-y-6 mb-10">
         <div className="flex flex-wrap items-center gap-3">
           <span className="px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary text-xs font-semibold uppercase tracking-wide">
-            {article.category}
+            {safeArticle.category}
           </span>
-          {tags.slice(0, 4).map((tag) => (
+          {safeArticle.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
               className="px-3 py-1 rounded-full bg-dark-secondary text-light-tertiary text-xs font-medium"
@@ -290,7 +300,7 @@ const NewsArticlePage: React.FC = () => {
           ))}
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-black text-light-primary leading-tight">{article.title}</h1>
+        <h1 className="text-4xl md:text-5xl font-black text-light-primary leading-tight">{safeArticle.title}</h1>
 
         <div className="flex flex-wrap items-center gap-4 text-sm text-light-tertiary">
           {formattedDate && (
@@ -305,22 +315,22 @@ const NewsArticlePage: React.FC = () => {
               {readingTime} min read
             </span>
           )}
-          {article.source && (
+          {safeArticle.source && (
             <a
-              href={article.sourceUrl || '#'}
+              href={safeArticle.sourceUrl || '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 hover:text-brand-primary transition"
             >
               <span className="w-2 h-2 rounded-full bg-brand-primary" />
-              Source: {article.source}
+              Source: {safeArticle.source}
             </a>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <a
-            href={article.sourceUrl || '#'}
+            href={safeArticle.sourceUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition shadow-lg"
@@ -344,9 +354,9 @@ const NewsArticlePage: React.FC = () => {
         </div>
       </header>
 
-      {summaryBullets.length > 0 && (
+      {safeArticle.summaryBullets.length > 0 && (
         <ul className="list-disc pl-8 text-lg text-light-secondary bg-dark-secondary/40 border border-border-dark px-6 py-5 rounded-2xl mb-10 leading-relaxed space-y-2">
-          {summaryBullets.map((bullet, index) => (
+          {safeArticle.summaryBullets.map((bullet, index) => (
             <li key={index}>{bullet}</li>
           ))}
         </ul>
@@ -385,9 +395,9 @@ const NewsArticlePage: React.FC = () => {
               <div key={idx} className="h-48 rounded-2xl border border-border-dark bg-dark-secondary/50" />
             ))}
           </div>
-        ) : toArray<NewsArticle>(relatedArticles).length > 0 ? (
+        ) : safeArticle.relatedArticles.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2">
-            {toArray<NewsArticle>(relatedArticles).map((related) => (
+            {safeArticle.relatedArticles.map((related) => (
               <NewsCard key={related.id} article={related} />
             ))}
           </div>
