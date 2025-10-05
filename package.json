@@ -68,5 +68,13 @@
     "*.{json,css,md}": [
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "tailwindcss": "3.x",
+    "postcss": "^8",
+    "autoprefixer": "^10"
+  },
+  "engines": {
+    "node": ">=18.18 <21"
   }
 }
