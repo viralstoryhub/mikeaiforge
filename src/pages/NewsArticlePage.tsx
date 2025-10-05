@@ -37,6 +37,13 @@ const NewsArticlePage: React.FC = () => {
   const [copyState, setCopyState] = useState<CopyState>('idle');
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const tags = useMemo(() => toArray<string>(article?.tags, { csv: true }), [article?.tags]);
+  const summaryBullets = useMemo(() => {
+    const art = article as any;
+    const fallback = toArray<string>(article?.summary, { split: '\n' });
+    return toArray<string>(art?.summaryBullets, { fallback });
+  }, [article]);
+
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) {
@@ -273,7 +280,7 @@ const NewsArticlePage: React.FC = () => {
           <span className="px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary text-xs font-semibold uppercase tracking-wide">
             {article.category}
           </span>
-          {toArray<string>(article.tags, { csv: true }).slice(0, 4).map((tag) => (
+          {tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
               className="px-3 py-1 rounded-full bg-dark-secondary text-light-tertiary text-xs font-medium"
@@ -337,10 +344,12 @@ const NewsArticlePage: React.FC = () => {
         </div>
       </header>
 
-      {article.summary && (
-        <p className="text-lg text-light-secondary bg-dark-secondary/40 border border-border-dark px-6 py-5 rounded-2xl mb-10 leading-relaxed">
-          {article.summary}
-        </p>
+      {summaryBullets.length > 0 && (
+        <ul className="list-disc pl-8 text-lg text-light-secondary bg-dark-secondary/40 border border-border-dark px-6 py-5 rounded-2xl mb-10 leading-relaxed space-y-2">
+          {summaryBullets.map((bullet, index) => (
+            <li key={index}>{bullet}</li>
+          ))}
+        </ul>
       )}
 
       <article
@@ -376,9 +385,9 @@ const NewsArticlePage: React.FC = () => {
               <div key={idx} className="h-48 rounded-2xl border border-border-dark bg-dark-secondary/50" />
             ))}
           </div>
-        ) : relatedArticles.length > 0 ? (
+        ) : toArray<NewsArticle>(relatedArticles).length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2">
-            {relatedArticles.map((related) => (
+            {toArray<NewsArticle>(relatedArticles).map((related) => (
               <NewsCard key={related.id} article={related} />
             ))}
           </div>
