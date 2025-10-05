@@ -140,14 +140,8 @@ const NewsArticlePage: React.FC = () => {
 
   const formattedContent = useMemo(() => {
     if (!article?.content) return '';
-    const content = article.content.trim();
-    if (/<[a-z][\s\S]*>/i.test(content)) {
-      return content;
-    }
-    return content
-      .split(/\n{2,}/)
-      .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br />')}</p>`)
-      .join('');
+    const paragraphs = toArray<string>(article.content, { split: '\n\n' });
+    return paragraphs.map((p) => `<p>${p.replace(/\n/g, '<br />')}</p>`).join('');
   }, [article?.content]);
 
   const formattedDate = useMemo(() => {
