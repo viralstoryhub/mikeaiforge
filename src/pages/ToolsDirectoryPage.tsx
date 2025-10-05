@@ -4,6 +4,8 @@ import { useData } from '../contexts/DataContext';
 import ToolCard from '../components/ToolCard';
 import { ToolCardSkeleton } from '../components/Skeletons';
 import Pagination from '../components/Pagination';
+import { toArray } from '../utils/toArray';
+import { Tool } from '../types';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -13,16 +15,22 @@ const ToolsDirectoryPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
 
+  console.log('[ToolsDirectoryPage] isLoading:', isLoading);
+  console.log('[ToolsDirectoryPage] tools:', tools);
+  console.log('[ToolsDirectoryPage] tools type:', typeof tools, Array.isArray(tools));
+
   const categories = useMemo(() => {
-    if (!tools) return ['All'];
-    const allCategories = tools.flatMap(tool => tool.categories);
+    const toolsArray = toArray<Tool>(tools);
+    if (toolsArray.length === 0) return ['All'];
+    const allCategories = toolsArray.flatMap(tool => tool.categories);
     return ['All', ...Array.from(new Set(allCategories))];
   }, [tools]);
 
   const filteredTools = useMemo(() => {
-    if (!tools) return [];
+    const toolsArray = toArray<Tool>(tools);
+    if (toolsArray.length === 0) return [];
     const lowercasedSearchTerm = searchTerm.toLowerCase();
-    return tools.filter(tool => {
+    return toolsArray.filter(tool => {
       const matchesSearch = tool.name.toLowerCase().includes(lowercasedSearchTerm) ||
                             tool.summary.toLowerCase().includes(lowercasedSearchTerm) ||
                             tool.tags.some(tag => tag.toLowerCase().includes(lowercasedSearchTerm));
@@ -40,7 +48,11 @@ const ToolsDirectoryPage: React.FC = () => {
 
   const paginatedTools = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredTools.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    const result = filteredTools.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    console.log('[ToolsDirectoryPage] filteredTools length:', filteredTools.length);
+    console.log('[ToolsDirectoryPage] paginatedTools length:', result.length);
+    console.log('[ToolsDirectoryPage] paginatedTools:', result);
+    return result;
   }, [currentPage, filteredTools]);
 
 

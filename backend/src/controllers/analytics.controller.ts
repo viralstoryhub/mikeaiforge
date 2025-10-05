@@ -666,6 +666,18 @@ export const getGoogleAnalyticsData = async (
   next: NextFunction
 ) => {
   try {
+    // Log for debugging
+    console.log('[GA] Fetching analytics data...');
+    console.log('[GA] Property ID:', process.env.GOOGLE_ANALYTICS_PROPERTY_ID);
+    console.log('[GA] Credentials path:', process.env.GOOGLE_ANALYTICS_CREDENTIALS_PATH);
+
+    const { propertyId, credentialsPath } = resolveGAConfig();
+    
+    console.log('[GA] Resolved property ID:', propertyId);
+    console.log('[GA] Resolved credentials path:', credentialsPath);
+
+    const client = getGAClient();
+    
     const startDateParam = parseDateFromQuery(req.query.startDate);
     const endDateParam = parseDateFromQuery(req.query.endDate);
     const { startDate, endDate } = normalizeDateRange(
@@ -674,14 +686,14 @@ export const getGoogleAnalyticsData = async (
     );
 
     const type = toStringParam(req.query.type) || 'overview';
-    const { propertyId } = resolveGAConfig();
-    const client = getGAClient();
+    const { propertyId: propertyIdFromConfig } = resolveGAConfig();
+    const clientFromConfig = getGAClient();
 
     // Shape response based on type parameter
     if (type === 'overview') {
       // Fetch overview metrics: users, sessions, pageViews, bounce rate, session duration
       const [overviewResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -701,7 +713,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch daily trend data
       const [trendResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -722,7 +734,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch top pages
       const [pagesResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -757,7 +769,7 @@ export const getGoogleAnalyticsData = async (
     } else if (type === 'engagement') {
       // Fetch engagement metrics
       const [engagementResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -778,7 +790,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch events breakdown
       const [eventsResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -799,7 +811,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch session duration buckets
       const [durationResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -826,7 +838,7 @@ export const getGoogleAnalyticsData = async (
     } else if (type === 'traffic' || type === 'acquisition') {
       // Fetch traffic source data
       const [sourceResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -847,7 +859,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch by medium
       const [mediumResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -868,7 +880,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch by country
       const [countryResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -889,7 +901,7 @@ export const getGoogleAnalyticsData = async (
 
       // Fetch campaigns
       const [campaignResponse] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -940,7 +952,7 @@ export const getGoogleAnalyticsData = async (
           : [{ name: 'date' }];
 
       const [response] = await client.runReport({
-        property: `properties/${propertyId}`,
+        property: `properties/${propertyIdFromConfig}`,
         dateRanges: [
           {
             startDate: formatISODate(startDate),
@@ -969,15 +981,21 @@ export const getGoogleAnalyticsData = async (
       });
     }
   } catch (error) {
+    console.error('[GA] Error fetching analytics:', error);
+    
     if (error instanceof AppError) {
-      next(error);
-      return;
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+        error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      });
     }
-    if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.error('Google Analytics Data API error', error);
-    }
-    next(new AppError('Failed to fetch Google Analytics data', 502));
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch Google Analytics data',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
+    });
   }
 };
 

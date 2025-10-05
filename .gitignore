@@ -63,3 +63,7 @@ temp/
 .vercel
 .turbo
 node_modules
+
+backend/config/google-analytics-credentials.json
+backend/.env.backup
+.env.development

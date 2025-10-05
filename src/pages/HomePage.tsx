@@ -112,9 +112,6 @@ const HomePage: React.FC = () => {
     let isMounted = true;
 
     const fetchForumPreview = async () => {
-      setForumLoading(true);
-      setForumError(null);
-
       try {
         const categoriesResponse = await forumService.getCategories();
         const categories = extractCollection<ForumCategoryPreview>(categoriesResponse);
@@ -140,6 +137,7 @@ const HomePage: React.FC = () => {
 
         if (isMounted) {
           setForumThreads(threads.slice(0, 4));
+          setForumError(null);
         }
       } catch (error) {
         if (isMounted) {
@@ -147,17 +145,10 @@ const HomePage: React.FC = () => {
           setForumThreads([]);
         }
         console.error('Failed to fetch forum data:', error);
-      } finally {
-        if (isMounted) {
-          setForumLoading(false);
-        }
       }
     };
 
     const fetchNewsPreview = async () => {
-      setNewsLoading(true);
-      setNewsError(null);
-
       try {
         let articles: NewsArticlePreview[] = [];
 
@@ -175,6 +166,7 @@ const HomePage: React.FC = () => {
 
         if (isMounted) {
           setNewsArticles(articles.slice(0, 3));
+          setNewsError(null);
         }
       } catch (error) {
         if (isMounted) {
@@ -182,15 +174,23 @@ const HomePage: React.FC = () => {
           setNewsArticles([]);
         }
         console.error('Failed to fetch news data:', error);
-      } finally {
-        if (isMounted) {
-          setNewsLoading(false);
-        }
       }
     };
 
-    fetchForumPreview();
-    fetchNewsPreview();
+    setForumLoading(true);
+    setNewsLoading(true);
+
+    const tasks = [
+      fetchForumPreview(),
+      fetchNewsPreview(),
+    ];
+
+    Promise.allSettled(tasks).finally(() => {
+      if (isMounted) {
+        setForumLoading(false);
+        setNewsLoading(false);
+      }
+    });
 
     return () => {
       isMounted = false;

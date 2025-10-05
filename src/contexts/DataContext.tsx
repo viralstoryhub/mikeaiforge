@@ -34,17 +34,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    console.log('[DataContext] Starting fetchData...');
     setLoading(true);
     try {
       const [toolsData, workflowsData] = await Promise.all([
         contentService.getTools(),
         contentService.getWorkflows(),
       ]);
+      console.log('[DataContext] Fetched tools:', toolsData);
+      console.log('[DataContext] Fetched workflows:', workflowsData);
       setTools(toolsData);
       setWorkflows(workflowsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
+      console.log('[DataContext] Setting loading to false');
       setLoading(false);
     }
   }, []);

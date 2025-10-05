@@ -25,16 +25,38 @@ import { registerNewsSyncJob } from './jobs/newsSync.job';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.API_PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 // Trust proxy - required for services behind a proxy (Render, Heroku, etc.)
 app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'https://mikesaiforge.netlify.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'http://localhost:5173'],
+    origin(origin, cb) {
+      // Allow requests with no origin (like mobile apps, curl, Postman)
+      if (!origin) return cb(null, true);
+      
+      // Allow whitelisted origins
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      
+      // Allow any localhost port 51xx for development flexibility
+      if (/^http:\/\/(localhost|127\.0\.0\.1):51\d{2}$/.test(origin)) return cb(null, true);
+      
+      // Block other origins
+      cb(new Error(`CORS blocked for ${origin}`));
+    },
     credentials: true,
   })
 );
