@@ -3,18 +3,9 @@ import { Link, useParams } from 'react-router-dom';
 import * as newsService from '../services/newsService';
 import type { NewsArticle } from '../types';
 import NewsCard from '../components/NewsCard';
+import { toArray } from '../utils/toArray';
 
 type CopyState = 'idle' | 'success' | 'error';
-
-// Safe array helper to prevent .map() crashes
-const safeArray = <T,>(value: unknown, fallback: T[] = []): T[] => {
-  if (Array.isArray(value)) return value as T[];
-  if (typeof value === 'string' && value.trim()) {
-    // Handle comma-separated strings (like tags)
-    return value.split(',').map(s => s.trim()).filter(Boolean) as T[];
-  }
-  return fallback;
-};
 
 const extractArticle = (payload: unknown): NewsArticle | null => {
   if (!payload) return null;
@@ -288,7 +279,7 @@ const NewsArticlePage: React.FC = () => {
           <span className="px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary text-xs font-semibold uppercase tracking-wide">
             {article.category}
           </span>
-          {safeArray<string>(article.tags).slice(0, 4).map((tag) => (
+          {toArray<string>(article.tags, { csv: true }).slice(0, 4).map((tag) => (
             <span
               key={tag}
               className="px-3 py-1 rounded-full bg-dark-secondary text-light-tertiary text-xs font-medium"
