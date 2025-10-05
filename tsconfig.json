@@ -19,14 +19,7 @@
     "noEmit": true
   },
   "include": [
-    "*.ts",
-    "*.tsx",
-    "components/**/*",
-    "contexts/**/*",
-    "hooks/**/*",
-    "pages/**/*",
-    "services/**/*",
-    "tests/**/*"
+    "src/**/*"
   ],
   "exclude": ["node_modules", "dist", "backend"]
 }
