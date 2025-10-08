@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 import { NewsArticle, PaginatedResponse } from '../types';
 
 interface GetArticlesParams {
@@ -11,6 +11,20 @@ interface GetArticlesParams {
   timeframe?: string;
 }
 
+// Article input used for create/update operations
+export type ArticleInput = {
+  title: string;
+  summary: string;
+  content: string;
+  imageUrl?: string;
+  source: string;
+  sourceUrl?: string;
+  category: string;
+  tags?: string[];
+  publishedAt?: string | Date;
+  isFeatured?: boolean;
+};
+
 // Helper to extract data from the backend response format: { status: 'success', data: {...} }
 const extractData = <T>(response: any): T => {
   if (response?.data?.data) {
@@ -22,9 +36,11 @@ const extractData = <T>(response: any): T => {
   return response;
 };
 
-export const getArticles = async (params: GetArticlesParams = {}): Promise<PaginatedResponse<NewsArticle> | NewsArticle[]> => {
+export const getArticles = async (
+  params: GetArticlesParams = {}
+): Promise<PaginatedResponse<NewsArticle> | NewsArticle[]> => {
   try {
-    const response = await api.get('/news', { params });
+    const response = await apiClient.get('/news', { params });
     return extractData(response);
   } catch (error) {
     console.error('Error fetching articles:', error);
@@ -34,7 +50,7 @@ export const getArticles = async (params: GetArticlesParams = {}): Promise<Pagin
 
 export const getFeaturedArticles = async (): Promise<NewsArticle[]> => {
   try {
-    const response = await api.get('/news/featured');
+    const response = await apiClient.get('/news/featured');
     return extractData(response);
   } catch (error) {
     console.error('Error fetching featured articles:', error);
@@ -42,9 +58,11 @@ export const getFeaturedArticles = async (): Promise<NewsArticle[]> => {
   }
 };
 
-export const getArticleBySlug = async (slug: string): Promise<NewsArticle | null> => {
+export const getArticleBySlug = async (
+  slug: string
+): Promise<NewsArticle | null> => {
   try {
-    const response = await api.get(`/news/${slug}`);
+    const response = await apiClient.get(`/news/${slug}`);
     return extractData(response);
   } catch (error) {
     console.error('Error fetching article by slug:', error);
@@ -54,7 +72,7 @@ export const getArticleBySlug = async (slug: string): Promise<NewsArticle | null
 
 export const getCategories = async (): Promise<any> => {
   try {
-    const response = await api.get('/news/categories');
+    const response = await apiClient.get('/news/categories');
     return extractData(response);
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -62,9 +80,37 @@ export const getCategories = async (): Promise<any> => {
   }
 };
 
+export const createArticle = async (
+  payload: ArticleInput
+): Promise<NewsArticle> => {
+  const response = await apiClient.post('/news', payload);
+  return extractData(response);
+};
+
+export const updateArticle = async (
+  articleId: string,
+  updates: Partial<ArticleInput>
+): Promise<NewsArticle> => {
+  const response = await apiClient.patch(`/news/${articleId}`, updates);
+  return extractData(response);
+};
+
+export const deleteArticle = async (articleId: string): Promise<void> => {
+  await apiClient.delete(`/news/${articleId}`);
+};
+
+export const toggleFeatured = async (articleId: string): Promise<NewsArticle> => {
+  const response = await apiClient.patch(`/news/${articleId}/featured`);
+  return extractData(response);
+};
+
 export default {
   getArticles,
   getFeaturedArticles,
   getArticleBySlug,
   getCategories,
+  createArticle,
+  updateArticle,
+  deleteArticle,
+  toggleFeatured,
 };
