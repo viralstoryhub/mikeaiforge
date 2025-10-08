@@ -99,8 +99,12 @@ const App: React.FC = () => {
                           <AdminLayout>
                             <Routes>
                               <Route path="dashboard" element={<AdminDashboardPage />} />
-                              <Route path="analytics" element={<AdminAnalyticsPage />} />
-                              <Route path="google-analytics" element={<AdminGoogleAnalyticsPage />} />
+                              {import.meta.env.VITE_ENABLE_ADMIN_ANALYTICS === 'true' && (
+                                <>
+                                  <Route path="analytics" element={<AdminAnalyticsPage />} />
+                                  <Route path="google-analytics" element={<AdminGoogleAnalyticsPage />} />
+                                </>
+                              )}
                               <Route path="users" element={<AdminUsersPage />} />
                               <Route path="tools" element={<AdminToolsPage />} />
                               <Route path="workflows" element={<AdminWorkflowsPage />} />

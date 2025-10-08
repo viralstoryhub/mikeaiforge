@@ -29,7 +29,7 @@ const AdminSidebar: React.FC = () => {
                 <Link to="/" className="text-white font-bold text-lg">Mike's AI Forge</Link>
             </div>
             <nav className="flex-1 px-2 py-4 space-y-2">
-                {navItems.map(item => (
+                {(import.meta.env.VITE_ENABLE_ADMIN_ANALYTICS === 'true' ? navItems : navItems.filter(i => i.to !== '/admin/analytics' && i.to !== '/admin/google-analytics')).map(item => (
                     <NavLink
                         key={item.to}
                         to={item.to}

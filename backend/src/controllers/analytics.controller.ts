@@ -20,7 +20,13 @@ const MAX_REALTIME_LIMIT = 200;
 const MAX_SUMMARY_LIMIT = 100;
 
 let gaClient: BetaAnalyticsDataClient | null = null;
-let gaConfigCache: { propertyId: string; credentialsPath: string } | null = null;
+let gaConfigCache:
+  | {
+      propertyId: string;
+      credentialsPath?: string;
+      credentialsJson?: { client_email: string; private_key: string };
+    }
+  | null = null;
 
 const toStringParam = (value: unknown): string | undefined => {
   if (typeof value === 'string') {
@@ -223,7 +229,11 @@ const buildAnalyticsWhere = (
   return where;
 };
 
-const resolveGAConfig = (): { propertyId: string; credentialsPath: string } => {
+const resolveGAConfig = (): {
+  propertyId: string;
+  credentialsPath?: string;
+  credentialsJson?: { client_email: string; private_key: string };
+} => {
   if (gaConfigCache) {
     return gaConfigCache;
   }
@@ -236,10 +246,43 @@ const resolveGAConfig = (): { propertyId: string; credentialsPath: string } => {
     );
   }
 
+  // Prefer inline JSON credentials if provided
+  const rawJson =
+    process.env.GOOGLE_ANALYTICS_CREDENTIALS_JSON ||
+    process.env.GCP_SERVICE_ACCOUNT_JSON;
+
+  if (rawJson) {
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawJson);
+    } catch {
+      try {
+        const decoded = Buffer.from(rawJson, 'base64').toString('utf8');
+        parsed = JSON.parse(decoded);
+      } catch {
+        throw new AppError(
+          'Invalid GOOGLE_ANALYTICS_CREDENTIALS_JSON. Ensure it is valid JSON or base64-encoded JSON.',
+          503
+        );
+      }
+    }
+
+    if (!parsed?.client_email || !parsed?.private_key) {
+      throw new AppError(
+        'Service account JSON must include client_email and private_key.',
+        503
+      );
+    }
+
+    gaConfigCache = { propertyId, credentialsJson: { client_email: parsed.client_email, private_key: parsed.private_key } };
+    return gaConfigCache;
+  }
+
+  // Fallback to file path
   const credentialsPath = process.env.GOOGLE_ANALYTICS_CREDENTIALS_PATH;
   if (!credentialsPath) {
     throw new AppError(
-      'Google Analytics credentials path is not configured. Please set GOOGLE_ANALYTICS_CREDENTIALS_PATH.',
+      'Google Analytics credentials are not configured. Set GOOGLE_ANALYTICS_CREDENTIALS_JSON or GOOGLE_ANALYTICS_CREDENTIALS_PATH.',
       503
     );
   }
@@ -260,14 +303,22 @@ const resolveGAConfig = (): { propertyId: string; credentialsPath: string } => {
 };
 
 const getGAClient = (): BetaAnalyticsDataClient => {
-  const { credentialsPath } = resolveGAConfig();
+  const cfg = resolveGAConfig();
   if (!gaClient) {
     try {
-      gaClient = new BetaAnalyticsDataClient({ keyFilename: credentialsPath });
+      if (cfg.credentialsJson) {
+        gaClient = new BetaAnalyticsDataClient({
+          credentials: cfg.credentialsJson as any,
+        });
+      } else if (cfg.credentialsPath) {
+        gaClient = new BetaAnalyticsDataClient({ keyFilename: cfg.credentialsPath });
+      } else {
+        throw new Error('No GA credentials configured');
+      }
     } catch (error) {
       gaClient = null;
       throw new AppError(
-        'Failed to initialize Google Analytics client. Check credentials file integrity.',
+        'Failed to initialize Google Analytics client. Check credentials configuration.',
         500
       );
     }
@@ -669,12 +720,19 @@ export const getGoogleAnalyticsData = async (
     // Log for debugging
     console.log('[GA] Fetching analytics data...');
     console.log('[GA] Property ID:', process.env.GOOGLE_ANALYTICS_PROPERTY_ID);
-    console.log('[GA] Credentials path:', process.env.GOOGLE_ANALYTICS_CREDENTIALS_PATH);
+    console.log(
+      '[GA] Credentials configured:',
+      process.env.GOOGLE_ANALYTICS_CREDENTIALS_JSON
+        ? 'inline JSON'
+        : process.env.GOOGLE_ANALYTICS_CREDENTIALS_PATH
+        ? `file: ${process.env.GOOGLE_ANALYTICS_CREDENTIALS_PATH}`
+        : 'missing'
+    );
 
-    const { propertyId, credentialsPath } = resolveGAConfig();
-    
+    const { propertyId, credentialsPath, credentialsJson } = resolveGAConfig();
+
     console.log('[GA] Resolved property ID:', propertyId);
-    console.log('[GA] Resolved credentials path:', credentialsPath);
+    console.log('[GA] Using credentials:', credentialsJson ? 'inline JSON' : `file: ${credentialsPath}`);
 
     const client = getGAClient();
     
