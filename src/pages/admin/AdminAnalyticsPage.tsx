@@ -4,6 +4,8 @@ import { User } from '../../types';
 import * as authService from '../../services/authService';
 import { UTILITIES_DATA } from '../../constants';
 
+import apiClient from '../../services/apiClient';
+
 /**
  * Existing simple BarChart component (kept as-is).
  */
@@ -214,20 +216,14 @@ const AdminAnalyticsPage: React.FC = () => {
         setGaLoading(true);
         setGaError(null);
         try {
-            const params = new URLSearchParams({
-                startDate: range.startDate,
-                endDate: range.endDate,
-                type: 'overview',
+            const res = await apiClient.get('/analytics/google-analytics', {
+                params: {
+                    startDate: range.startDate,
+                    endDate: range.endDate,
+                    type: 'overview',
+                },
             });
-            const res = await fetch(`/api/analytics/google-analytics?${params.toString()}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || 'Failed to fetch GA overview');
-            }
-            const json = await res.json();
+            const json = res?.data?.data ?? res?.data ?? {};
             // Expecting json shape with metrics & arrays - adapt if backend differs
             setOverviewMetrics({
                 totalUsers: json.totalUsers,
@@ -249,12 +245,8 @@ const AdminAnalyticsPage: React.FC = () => {
 
     const fetchGARealtime = useCallback(async () => {
         try {
-            const res = await fetch(`/api/analytics/google-analytics/realtime`, { method: 'GET' });
-            if (!res.ok) {
-                const txt = await res.text();
-                throw new Error(txt || 'Failed to fetch realtime');
-            }
-            const json = await res.json();
+            const res = await apiClient.get('/analytics/google-analytics/realtime');
+            const json = res?.data?.data ?? res?.data ?? {};
             setRealtimeData({
                 activeUsers: json.activeUsers,
                 topPages: json.activePages || [],
@@ -270,17 +262,14 @@ const AdminAnalyticsPage: React.FC = () => {
         setGaLoading(true);
         setGaError(null);
         try {
-            const params = new URLSearchParams({
-                startDate: range.startDate,
-                endDate: range.endDate,
-                type: 'engagement',
+            const res = await apiClient.get('/analytics/google-analytics', {
+                params: {
+                    startDate: range.startDate,
+                    endDate: range.endDate,
+                    type: 'engagement',
+                },
             });
-            const res = await fetch(`/api/analytics/google-analytics?${params.toString()}`, { method: 'GET' });
-            if (!res.ok) {
-                const txt = await res.text();
-                throw new Error(txt || 'Failed to fetch engagement');
-            }
-            const json = await res.json();
+            const json = res?.data?.data ?? res?.data ?? {};
             setEngagementData({
                 eventsPerSession: json.eventsPerSession,
                 engagedSessions: json.engagedSessions,
@@ -299,17 +288,14 @@ const AdminAnalyticsPage: React.FC = () => {
         setGaLoading(true);
         setGaError(null);
         try {
-            const params = new URLSearchParams({
-                startDate: range.startDate,
-                endDate: range.endDate,
-                type: 'traffic',
+            const res = await apiClient.get('/analytics/google-analytics', {
+                params: {
+                    startDate: range.startDate,
+                    endDate: range.endDate,
+                    type: 'traffic',
+                },
             });
-            const res = await fetch(`/api/analytics/google-analytics?${params.toString()}`, { method: 'GET' });
-            if (!res.ok) {
-                const txt = await res.text();
-                throw new Error(txt || 'Failed to fetch traffic');
-            }
-            const json = await res.json();
+            const json = res?.data?.data ?? res?.data ?? {};
             setTrafficData({
                 bySource: json.bySource || [],
                 byCountry: json.byCountry || [],

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import GoogleAnalyticsWidget, { DateRange } from '../../components/admin/GoogleAnalyticsWidget';
 import DateRangePicker from '../../components/admin/DateRangePicker';
 
+import apiClient from '../../services/apiClient';
+
 /**
  * Small inline LineChart for trends (simple SVG polyline).
  */
@@ -140,20 +142,14 @@ const AdminGoogleAnalyticsPage: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const params = new URLSearchParams({
-                startDate: range.startDate,
-                endDate: range.endDate,
-                type,
+            const res = await apiClient.get('/analytics/google-analytics', {
+                params: {
+                    startDate: range.startDate,
+                    endDate: range.endDate,
+                    type,
+                },
             });
-            const res = await fetch(`/api/analytics/google-analytics?${params.toString()}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || 'Failed to fetch Google Analytics data');
-            }
-            const json = await res.json();
+            const json = res?.data?.data ?? res?.data ?? {};
 
             if (type === 'overview') {
                 setOverview({

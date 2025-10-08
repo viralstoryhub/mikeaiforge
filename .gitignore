@@ -65,5 +65,9 @@ temp/
 node_modules
 
 backend/config/google-analytics-credentials.json
+backend/google-analytics-credentials.json
 backend/.env.backup
 .env.development
+
+backend/.env
+backend/.env.local

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import * as authService from '../../services/authService';
+import { apiClient } from '../../services/apiClient';
 import { useData } from '../../contexts/DataContext';
 import { User } from '../../types';
 import StatCard from '../../components/admin/StatCard';
@@ -81,14 +82,9 @@ const AdminDashboardPage: React.FC = () => {
         setStatsLoading(true);
         setStatsError(null);
         try {
-            const res = await fetch('/api/admin/stats', { credentials: 'same-origin' });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || `Status ${res.status}`);
-            }
-            const data = await res.json();
-            // Expecting { data: { stats: {...} } } or { stats: {...} }
-            const stats = data?.data?.stats ?? data?.stats ?? data;
+            const res = await apiClient.get('/admin/stats');
+            const payload = res?.data?.data ?? res?.data ?? {};
+            const stats = payload?.stats ?? payload ?? null;
             setDashboardStats(stats);
         } catch (err: any) {
             console.error('Failed to fetch dashboard stats:', err);
@@ -104,13 +100,9 @@ const AdminDashboardPage: React.FC = () => {
         setActivityLoading(true);
         setActivityError(null);
         try {
-            const res = await fetch('/api/admin/audit-logs?limit=10', { credentials: 'same-origin' });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || `Status ${res.status}`);
-            }
-            const result = await res.json();
-            const entries: AuditLogEntry[] = result?.data?.logs ?? result?.logs ?? result ?? [];
+            const res = await apiClient.get('/admin/audit-logs', { params: { limit: 10 } });
+            const payload = res?.data?.data ?? res?.data ?? {};
+            const entries: AuditLogEntry[] = payload?.logs ?? payload ?? [];
             setRecentActivity(Array.isArray(entries) ? entries : []);
         } catch (err: any) {
             console.error('Failed to fetch recent activity:', err);
@@ -126,13 +118,9 @@ const AdminDashboardPage: React.FC = () => {
         setHealthLoading(true);
         setHealthError(null);
         try {
-            const res = await fetch('/api/admin/system-health', { credentials: 'same-origin' });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || `Status ${res.status}`);
-            }
-            const result = await res.json();
-            const health: SystemHealth = result?.data?.health ?? result?.health ?? result ?? {};
+            const res = await apiClient.get('/admin/system-health');
+            const payload = res?.data?.data ?? res?.data ?? {};
+            const health: SystemHealth = payload?.health ?? payload ?? {};
             health.lastUpdated = new Date().toISOString();
             setSystemHealth(health);
         } catch (err: any) {
@@ -158,11 +146,12 @@ const AdminDashboardPage: React.FC = () => {
         return () => clearInterval(interval);
     }, [fetchDashboardStats, fetchRecentActivity, fetchSystemHealth]);
 
-    const proUsers = users.filter(u => (u.subscriptionTier ?? '').toString().toLowerCase() === 'pro' || (u.subscriptionTier ?? '').toString().toLowerCase() === 'pro').length;
-    const freeUsers = users.length - proUsers;
-    const proPercentage = users.length > 0 ? (proUsers / users.length) * 100 : 0;
+    const safeUsers = Array.isArray(users) ? users : [];
+    const proUsers = safeUsers.filter(u => (u.subscriptionTier ?? '').toString().toLowerCase() === 'pro').length;
+    const freeUsers = safeUsers.length - proUsers;
+    const proPercentage = safeUsers.length > 0 ? (proUsers / safeUsers.length) * 100 : 0;
 
-    const totalUtilityUsage = users.reduce((total, user) => {
+    const totalUtilityUsage = safeUsers.reduce((total, user) => {
         if (!user.utilityUsage) return total;
         // Fix: Explicitly type reduce accumulators and values as numbers to prevent 'unknown' type errors.
         return total + Object.values(user.utilityUsage).reduce((sum: number, count: number) => sum + count, 0);
@@ -170,7 +159,7 @@ const AdminDashboardPage: React.FC = () => {
 
     const utilityUsageCounts = useMemo(() => {
       return UTILITIES_DATA.map(utility => {
-        const count = users.reduce((total, user) => {
+        const count = safeUsers.reduce((total, user) => {
             return total + (user.utilityUsage?.[utility.slug] || 0);
         }, 0);
         return { name: utility.name, count };
@@ -274,7 +263,7 @@ const AdminDashboardPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-                <StatCard title="Total Users" value={dashboardStats?.totalUsers ?? users.length} />
+                <StatCard title="Total Users" value={dashboardStats?.totalUsers ?? safeUsers.length} />
                 <StatCard title="Pro Subscribers" value={dashboardStats?.proUsers ?? proUsers} />
                 <StatCard title="Total Tools" value={dashboardStats?.totalTools ?? tools.length} />
                 <StatCard title="Total Workflows" value={dashboardStats?.totalWorkflows ?? workflows.length} />
@@ -295,7 +284,7 @@ const AdminDashboardPage: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Engagement</h3>
                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{dashboardStats?.totalUtilityUsage ?? totalUtilityUsage}</p>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Avg per user: {dashboardStats?.avgUsagePerUser != null ? formatNumber(dashboardStats.avgUsagePerUser) : (users.length ? Math.round(totalUtilityUsage / users.length) : '—')}</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Avg per user: {dashboardStats?.avgUsagePerUser != null ? formatNumber(dashboardStats.avgUsagePerUser) : (safeUsers.length ? Math.round(totalUtilityUsage / safeUsers.length) : '—')}</p>
                     <p className="mt-2 text-xs text-gray-400">Shows total usage of utilities across all users. Hover bars below to see details.</p>
                 </div>
 
@@ -320,7 +309,7 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="text-sm text-gray-500 dark:text-gray-400">{statsLoading ? 'Refreshing...' : 'Last 30 days'}</div>
                     </div>
                     <div className="h-64" title="User signup trends (hover to see details)">
-                        <UserSignupChart users={users} />
+                        <UserSignupChart users={safeUsers} />
                     </div>
                     <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Tip: Hover chart points to see daily signup counts.</p>
                 </div>

@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 
@@ -13,6 +13,7 @@ import ToastContainer from './components/ToastContainer';
 import { DataProvider } from './contexts/DataContext';
 import { CommandPaletteProvider } from './contexts/CommandPaletteContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { initializeAnalytics } from './services/analyticsService';
 
 // Admin Imports
 import AdminRoute from './components/AdminRoute';
@@ -74,6 +75,11 @@ if (import.meta.env.PROD) {
 }
 
 const App: React.FC = () => {
+  // Initialize Google Analytics on app mount
+  useEffect(() => {
+    initializeAnalytics();
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider>

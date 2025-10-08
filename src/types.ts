@@ -1,6 +1,3 @@
-// Fix: Add import for React to resolve 'Cannot find namespace React' error.
-import React from 'react';
-
 export interface Tool {
   id: string;
   slug: string;
@@ -101,6 +98,14 @@ export interface NewsArticle {
 }
 
 export interface PaginationParams {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
   page: number;
   limit: number;
   total: number;

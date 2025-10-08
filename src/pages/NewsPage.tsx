@@ -4,10 +4,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { Link } from 'react-router-dom';
 import newsService from '../services/newsService';
-import NewsCard from '../components/NewsCard';
 import { NewsArticle } from '../types';
+import { Link } from 'react-router-dom';
+import NewsCard from '../components/NewsCard';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -89,6 +89,8 @@ const NewsPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
+  const [debugInfo, setDebugInfo] = useState<string>('');
+
   const heroArticles = useMemo(
     () => featuredArticles.slice(0, 3),
     [featuredArticles]
@@ -153,6 +155,11 @@ const NewsPage: React.FC = () => {
     };
   };
 
+  const logDebug = (message: string, data?: any) => {
+    console.log(`[NewsPage] ${message}`, data);
+    setDebugInfo(prev => `${prev}\n${message}: ${JSON.stringify(data)}`);
+  };
+
   const fetchArticles = useCallback(
     async (
       {
@@ -168,6 +175,8 @@ const NewsPage: React.FC = () => {
       }
     ) => {
       setError(null);
+      logDebug('Fetching articles', { targetPage, append, category, search });
+      
       if (append) {
         setIsFetchingMore(true);
       } else {
@@ -182,6 +191,7 @@ const NewsPage: React.FC = () => {
       const searchParam = search ? search : undefined;
 
       try {
+        logDebug('Making API request');
         const response = await newsService.getArticles({
           page: targetPage,
           limit: DEFAULT_LIMIT,
@@ -189,9 +199,12 @@ const NewsPage: React.FC = () => {
           search: searchParam,
         });
 
+        logDebug('API response received', response);
+
         if (!response) {
-          // Handle case where service returns undefined
-          setError('Failed to fetch articles: no response from server.');
+          const errorMsg = 'Failed to fetch articles: no response from server.';
+          logDebug(errorMsg);
+          setError(errorMsg);
           setArticlesLoading(false);
           setIsFetchingMore(false);
           return;
@@ -203,6 +216,8 @@ const NewsPage: React.FC = () => {
           DEFAULT_LIMIT
         );
 
+        logDebug('Normalized response', normalized);
+
         setPage(normalized.page);
         setTotalPages(normalized.totalPages);
 
@@ -212,6 +227,7 @@ const NewsPage: React.FC = () => {
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to load articles.';
+        logDebug('Error fetching articles', { error: message, err });
         setError(message);
       } finally {
         setArticlesLoading(false);
@@ -349,8 +365,23 @@ const NewsPage: React.FC = () => {
     );
   }, [activeCategory, categories]);
 
+  // Add debug panel in development
   return (
     <div className="space-y-16 md:space-y-24">
+      {/* Debug Panel - Remove in production */}
+      {import.meta.env.DEV && (
+        <div className="fixed bottom-4 right-4 max-w-md max-h-96 overflow-auto bg-black/90 text-white p-4 rounded-lg text-xs z-50">
+          <h3 className="font-bold mb-2">Debug Info:</h3>
+          <pre className="whitespace-pre-wrap">{debugInfo}</pre>
+          <button
+            onClick={() => setDebugInfo('')}
+            className="mt-2 px-2 py-1 bg-red-500 rounded text-white"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl border border-border-dark bg-gradient-to-br from-dark-secondary via-dark-secondary to-black/80 px-6 py-16 md:px-12 md:py-24">
         <div className="absolute -top-20 -left-10 h-64 w-64 rounded-full bg-brand-primary/20 blur-3xl" />

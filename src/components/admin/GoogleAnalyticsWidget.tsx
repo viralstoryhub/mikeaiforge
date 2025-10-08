@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useId } from 'react';
+import apiClient from '../../services/apiClient';
+
 
 type ChartType = 'line' | 'bar' | 'pie';
 
@@ -701,16 +703,16 @@ const GoogleAnalyticsWidget: React.FC<GoogleAnalyticsWidgetProps> = ({
         async (signal?: AbortSignal) => {
             setLoading(true);
             setError(null);
-            
+
             const mapping = resolveMetricMapping(metric);
-            
+
             if (!mapping.supported) {
                 setLoading(false);
                 setError(mapping.fallbackMessage ?? 'Unsupported metric');
                 setData(null);
                 return;
             }
-            
+
             try {
                 const params = new URLSearchParams();
                 mapping.metrics.forEach(m => params.append('metrics', m));
@@ -720,23 +722,19 @@ const GoogleAnalyticsWidget: React.FC<GoogleAnalyticsWidgetProps> = ({
                 params.set('startDate', resolvedRange.startDate);
                 params.set('endDate', resolvedRange.endDate);
 
-                const response = await fetch(`/api/analytics/google-analytics?${params.toString()}`, {
-                    credentials: 'include',
-                    headers: { Accept: 'application/json' },
+                const { data: resData } = await apiClient.get('/analytics/google-analytics', {
+                    params,
                     signal,
+                    headers: { Accept: 'application/json' },
                 });
 
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(text || `Failed to load analytics data (${response.status})`);
-                }
-
-                const json = await response.json();
+                const json = resData?.data ?? resData ?? {};
                 const parsed = parseAnalyticsResponse(json);
                 if (signal?.aborted) return;
                 setData(parsed);
             } catch (err: any) {
-                if (err?.name === 'AbortError') return;
+                const isCanceled = err?.name === 'AbortError' || err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || err?.message === 'canceled';
+                if (isCanceled || signal?.aborted) return;
                 console.error('[GoogleAnalyticsWidget] load error:', err);
                 setError(err?.message ?? 'Unable to load analytics data.');
                 setData(null);

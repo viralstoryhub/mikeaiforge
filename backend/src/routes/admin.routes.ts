@@ -81,7 +81,7 @@ router.get(
           subscriptionTier: true,
           createdAt: true,
           updatedAt: true,
-          avatarUrl: true,
+          profilePictureUrl: true,
           bio: true,
           // include relation counts when available
           _count: true,
