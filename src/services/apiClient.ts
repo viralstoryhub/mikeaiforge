@@ -2,17 +2,20 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 const backendPort = 5000;
 
-const baseURL =
+// Prefer VITE_API_BASE_URL but also support legacy VITE_API_URL; trim trailing slashes
+const resolvedProdBaseURL =
   (import.meta.env.VITE_API_BASE_URL as string)?.replace(/\/+$/, '') ||
+  (import.meta.env.VITE_API_URL as string)?.replace(/\/+$/, '') ||
   'https://mikeaiforge-backend.onrender.com/api';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.DEV ? `http://localhost:${backendPort}/api` : baseURL,
+  baseURL: import.meta.env.DEV ? `http://localhost:${backendPort}/api` : resolvedProdBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  timeout: 15000,
+  // Allow longer time for cold starts (e.g., Render free tier)
+  timeout: 30000,
 });
 
 // Request interceptor to add auth token
@@ -40,7 +43,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post(`${baseURL}/auth/refresh`, {
+          const response = await axios.post(`${resolvedProdBaseURL}/auth/refresh`, {
             refreshToken,
           });
 

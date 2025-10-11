@@ -3,13 +3,16 @@ import { apiClient } from './apiClient';
 // Google Analytics 4
 const GA_MEASUREMENT_ID: string | undefined =
   import.meta.env.VITE_GA_MEASUREMENT_ID ||
-  (typeof window !== 'undefined' ? (window as any).__GA_ID__ : undefined) ||
-  // @ts-expect-error Non-VITE var is not exposed by Vite; fallback for environments that inject it
-  (import.meta.env as any).GOOGLE_ANALYTICS_ID;
+  (typeof window !== 'undefined' ? window.__GA_ID__ : undefined) ||
+  // Fallback for environments that inject a non-VITE variable
+  (typeof import.meta !== 'undefined' && 'env' in import.meta
+    ? (import.meta as unknown as { env: Record<string, string | undefined> }).env
+        .GOOGLE_ANALYTICS_ID
+    : undefined);
 
 interface AnalyticsEvent {
   event: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 // Internal flags to ensure initialization only happens once
@@ -47,10 +50,11 @@ function setupGtag(): void {
 
   // If gtag already exists, do not overwrite it (idempotent)
   if (!window.gtag) {
-    function gtag(...args: any[]) {
-      window.dataLayer.push(args);
-    }
-    window.gtag = gtag;
+    const gtagFn = (...args: unknown[]) => {
+      window.dataLayer.push(args as unknown[]);
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    window.gtag = gtagFn as (...args: any[]) => void;
   }
 
   try {
@@ -63,7 +67,6 @@ function setupGtag(): void {
     }
   } catch (err) {
     // Swallow errors - not critical for app flow
-    // eslint-disable-next-line no-console
     console.error('Failed to initialize gtag:', err);
   }
 }
@@ -81,7 +84,6 @@ function attachRouteChangeListener(): void {
       // Use existing helper to track page view with hash for HashRouter
       trackPageView(path);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Error handling route change for analytics:', err);
     }
   };
@@ -89,17 +91,17 @@ function attachRouteChangeListener(): void {
   try {
     // Wrap pushState
     const originalPushState = history.pushState;
-    history.pushState = function (this: History, ...args: any[]) {
+    history.pushState = function (this: History, ...args: Parameters<History['pushState']>) {
       // Call original
-      originalPushState.apply(this, args as any);
+      originalPushState.apply(this, args);
       // Trigger handler asynchronously to ensure location is updated
       setTimeout(handleRouteChange, 0);
     };
 
     // Wrap replaceState
     const originalReplaceState = history.replaceState;
-    history.replaceState = function (this: History, ...args: any[]) {
-      originalReplaceState.apply(this, args as any);
+    history.replaceState = function (this: History, ...args: Parameters<History['replaceState']>) {
+      originalReplaceState.apply(this, args);
       setTimeout(handleRouteChange, 0);
     };
 
@@ -108,7 +110,6 @@ function attachRouteChangeListener(): void {
 
     routeListenerAttached = true;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('Failed to attach route change listeners for analytics:', err);
   }
 }
@@ -121,47 +122,56 @@ let clickListenerAttached = false;
 function attachClickTracking(): void {
   if (typeof window === 'undefined' || clickListenerAttached) return;
   try {
-    document.addEventListener('click', (e) => {
-      const clicked = (e.target as HTMLElement);
-      const target = clicked?.closest('[data-analytics-event]') as HTMLElement | null;
-      if (target) {
-        const eventName = target.getAttribute('data-analytics-event');
-        if (!eventName) return;
-        const propsAttr = target.getAttribute('data-analytics-props');
-        let props: Record<string, any> = {};
-        if (propsAttr) {
-          try { props = JSON.parse(propsAttr); } catch {}
+    document.addEventListener(
+      'click',
+      (e) => {
+        const clicked = e.target as HTMLElement;
+        const target = clicked?.closest('[data-analytics-event]') as HTMLElement | null;
+        if (target) {
+          const eventName = target.getAttribute('data-analytics-event');
+          if (!eventName) return;
+          const propsAttr = target.getAttribute('data-analytics-props');
+          let props: Record<string, unknown> = {};
+          if (propsAttr) {
+            try {
+              props = JSON.parse(propsAttr) as Record<string, unknown>;
+            } catch (errParse) {
+              /* ignore */
+            }
+          }
+          // If this is an outbound link, annotate automatically
+          if (target.tagName === 'A') {
+            const href = (target as HTMLAnchorElement).href;
+            const isOutbound =
+              href && new URL(href, window.location.href).hostname !== window.location.hostname;
+            if (isOutbound) {
+              props = { ...props, url: href };
+            }
+          }
+          trackEvent(eventName, props);
+          return;
         }
-        // If this is an outbound link, annotate automatically
-        if (target.tagName === 'A') {
-          const href = (target as HTMLAnchorElement).href;
-          const isOutbound = href && new URL(href, window.location.href).hostname !== window.location.hostname;
-          if (isOutbound) {
-            props = { ...props, url: href };
+        // Auto-track outbound link clicks even without data attributes
+        const anchor = clicked?.closest('a') as HTMLAnchorElement | null;
+        if (anchor && anchor.href) {
+          try {
+            const url = new URL(anchor.href, window.location.href);
+            const isOutbound = url.hostname !== window.location.hostname;
+            if (isOutbound) {
+              trackEvent('outbound_click', { url: anchor.href });
+            }
+          } catch (errUrl) {
+            /* ignore */
           }
         }
-        trackEvent(eventName, props);
-        return;
-      }
-      // Auto-track outbound link clicks even without data attributes
-      const anchor = clicked?.closest('a') as HTMLAnchorElement | null;
-      if (anchor && anchor.href) {
-        try {
-          const url = new URL(anchor.href, window.location.href);
-          const isOutbound = url.hostname !== window.location.hostname;
-          if (isOutbound) {
-            trackEvent('outbound_click', { url: anchor.href });
-          }
-        } catch {}
-      }
-    }, { capture: true });
+      },
+      { capture: true }
+    );
     clickListenerAttached = true;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('Failed to attach click tracking listener:', err);
   }
 }
-
 
 /**
  * Public function to initialize analytics (GA + route tracking).
@@ -177,9 +187,12 @@ export function initializeAnalytics(): void {
   if (!GA_MEASUREMENT_ID) {
     // No GA configured; surface a non-fatal warning to help diagnose prod issues
     try {
-      // eslint-disable-next-line no-console
-      console.warn('[Analytics] GA not initialized: missing GA measurement ID (VITE_GA_MEASUREMENT_ID or fallback).');
-    } catch {}
+      console.warn(
+        '[Analytics] GA not initialized: missing GA measurement ID (VITE_GA_MEASUREMENT_ID or fallback).'
+      );
+    } catch (e) {
+      // ignore - even warning logging can fail in restricted environments
+    }
     return;
   }
 
@@ -197,7 +210,9 @@ export function initializeAnalytics(): void {
         ad_personalization: granted ? 'granted' : 'denied',
       });
     }
-  } catch {}
+  } catch (e) {
+    // ignore
+  }
 
   attachRouteChangeListener();
   attachClickTracking();
@@ -206,7 +221,9 @@ export function initializeAnalytics(): void {
 export function updateConsent(granted: boolean): void {
   try {
     localStorage.setItem('consent.ga', granted ? 'granted' : 'denied');
-  } catch {}
+  } catch (e) {
+    // ignore
+  }
   if (typeof window === 'undefined' || !window.gtag) return;
   window.gtag('consent', 'update', {
     ad_storage: granted ? 'granted' : 'denied',
@@ -248,6 +265,7 @@ if (GA_MEASUREMENT_ID && typeof window !== 'undefined') {
 // Initialize Mixpanel (if token provided)
 const MIXPANEL_TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN;
 if (MIXPANEL_TOKEN && typeof window !== 'undefined') {
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, prefer-rest-params */
   (function (f: Document, b: any) {
     if (!b.__SV) {
       const a = window;
@@ -267,7 +285,8 @@ if (MIXPANEL_TOKEN && typeof window !== 'undefined') {
             a = c[1];
           }
           b[a] = function () {
-            b.push([a].concat(Array.prototype.slice.call(arguments, 0)));
+            // legacy snippet uses arguments; adapted for lint compliance
+            b.push([a].concat(Array.prototype.slice.call(arguments as unknown as IArguments, 0)));
           };
         }
         let f: any = b;
@@ -290,27 +309,29 @@ if (MIXPANEL_TOKEN && typeof window !== 'undefined') {
         f.people.toString = function () {
           return f.toString(1) + '.people (stub)';
         };
-        const functions = 'disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config reset people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user'.split(
-          ' '
-        );
+        const functions =
+          'disable time_event track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config reset people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user'.split(
+            ' '
+          );
         for (g = 0; g < functions.length; g++) e(f, functions[g]);
         b._i.push([a, c, d]);
       };
       b.__SV = 1.2;
-      c = f.createElement('script');
-      c.type = 'text/javascript';
-      c.async = true;
-      c.src = 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
-      d = f.getElementsByTagName('script')[0];
-      d.parentNode?.insertBefore(c, d);
+      const cEl = f.createElement('script');
+      cEl.type = 'text/javascript';
+      cEl.async = true;
+      cEl.src = 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
+      const dEl = f.getElementsByTagName('script')[0];
+      dEl.parentNode?.insertBefore(cEl, dEl);
     }
   })(document, window.mixpanel || []);
+  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-inner-declarations */
   window.mixpanel?.init(MIXPANEL_TOKEN);
 }
 
-export const trackEvent = (eventName: string, properties: Record<string, any> = {}): void => {
+export const trackEvent = (eventName: string, properties: Record<string, unknown> = {}): void => {
   if (import.meta.env.DEV) {
-    console.log(`[Analytics Event]`, {
+    console.warn('[Analytics Event]', {
       event: eventName,
       properties,
       timestamp: new Date().toISOString(),
@@ -322,7 +343,7 @@ export const trackEvent = (eventName: string, properties: Record<string, any> = 
   }
 
   if (typeof window !== 'undefined' && window.mixpanel) {
-    window.mixpanel.track(eventName, properties);
+    window.mixpanel.track(eventName, properties as Record<string, unknown>);
   }
 
   // Only send to backend in production to reduce noise in local/dev
@@ -340,14 +361,14 @@ export const trackEvent = (eventName: string, properties: Record<string, any> = 
   }
 };
 
-export const identifyUser = (userId: string, traits: Record<string, any> = {}): void => {
+export const identifyUser = (userId: string, traits: Record<string, unknown> = {}): void => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('set', { user_id: userId });
   }
 
   if (typeof window !== 'undefined' && window.mixpanel) {
     window.mixpanel.identify(userId);
-    window.mixpanel.people.set(traits);
+    window.mixpanel.people.set(traits as Record<string, unknown>);
   }
 };
 
@@ -357,9 +378,12 @@ export const trackPageView = (path: string): void => {
 
 declare global {
   interface Window {
-    dataLayer: any[];
+    dataLayer: unknown[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gtag: (...args: any[]) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mixpanel: any;
+    __GA_ID__?: string;
   }
 }
 
