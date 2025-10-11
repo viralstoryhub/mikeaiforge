@@ -73,8 +73,8 @@ function attachRouteChangeListener(): void {
 
   const handleRouteChange = () => {
     try {
-      const path = window.location.pathname + window.location.search;
-      // Use existing helper to track page view
+      const path = window.location.pathname + window.location.search + window.location.hash;
+      // Use existing helper to track page view with hash for HashRouter
       trackPageView(path);
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -110,6 +110,56 @@ function attachRouteChangeListener(): void {
 }
 
 /**
+ * Attach a generic click listener to capture elements with data-analytics-event attributes.
+ * Usage: add data-analytics-event="<event_name>" and optional data-analytics-props='{"key":"value"}' on any clickable element.
+ */
+let clickListenerAttached = false;
+function attachClickTracking(): void {
+  if (typeof window === 'undefined' || clickListenerAttached) return;
+  try {
+    document.addEventListener('click', (e) => {
+      const clicked = (e.target as HTMLElement);
+      const target = clicked?.closest('[data-analytics-event]') as HTMLElement | null;
+      if (target) {
+        const eventName = target.getAttribute('data-analytics-event');
+        if (!eventName) return;
+        const propsAttr = target.getAttribute('data-analytics-props');
+        let props: Record<string, any> = {};
+        if (propsAttr) {
+          try { props = JSON.parse(propsAttr); } catch {}
+        }
+        // If this is an outbound link, annotate automatically
+        if (target.tagName === 'A') {
+          const href = (target as HTMLAnchorElement).href;
+          const isOutbound = href && new URL(href, window.location.href).hostname !== window.location.hostname;
+          if (isOutbound) {
+            props = { ...props, url: href };
+          }
+        }
+        trackEvent(eventName, props);
+        return;
+      }
+      // Auto-track outbound link clicks even without data attributes
+      const anchor = clicked?.closest('a') as HTMLAnchorElement | null;
+      if (anchor && anchor.href) {
+        try {
+          const url = new URL(anchor.href, window.location.href);
+          const isOutbound = url.hostname !== window.location.hostname;
+          if (isOutbound) {
+            trackEvent('outbound_click', { url: anchor.href });
+          }
+        } catch {}
+      }
+    }, { capture: true });
+    clickListenerAttached = true;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to attach click tracking listener:', err);
+  }
+}
+
+
+/**
  * Public function to initialize analytics (GA + route tracking).
  * - Ensures GA script is injected only once
  * - Ensures gtag is setup only once
@@ -127,7 +177,35 @@ export function initializeAnalytics(): void {
 
   injectGAScript();
   setupGtag();
+  // Apply saved consent (if any)
+  try {
+    const stored = localStorage.getItem('consent.ga');
+    if (stored === 'granted' || stored === 'denied') {
+      const granted = stored === 'granted';
+      window.gtag?.('consent', 'update', {
+        ad_storage: granted ? 'granted' : 'denied',
+        analytics_storage: granted ? 'granted' : 'denied',
+        ad_user_data: granted ? 'granted' : 'denied',
+        ad_personalization: granted ? 'granted' : 'denied',
+      });
+    }
+  } catch {}
+
   attachRouteChangeListener();
+  attachClickTracking();
+}
+
+export function updateConsent(granted: boolean): void {
+  try {
+    localStorage.setItem('consent.ga', granted ? 'granted' : 'denied');
+  } catch {}
+  if (typeof window === 'undefined' || !window.gtag) return;
+  window.gtag('consent', 'update', {
+    ad_storage: granted ? 'granted' : 'denied',
+    analytics_storage: granted ? 'granted' : 'denied',
+    ad_user_data: granted ? 'granted' : 'denied',
+    ad_personalization: granted ? 'granted' : 'denied',
+  });
 }
 
 /**

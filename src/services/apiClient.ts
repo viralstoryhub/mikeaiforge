@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
-const backendPort = 3000;
+const backendPort = 5000;
 
 const baseURL =
   (import.meta.env.VITE_API_BASE_URL as string)?.replace(/\/+$/, '') ||

@@ -6,6 +6,7 @@ import { useTiltEffect } from '../hooks/useTiltEffect';
 import * as forumService from '../services/forumService';
 import type { ForumCategory, ForumThread } from '../types';
 import ForumThreadModal from '../components/ForumThreadModal';
+import Seo from '../components/Seo';
 
 type ForumCategoryWithExtras = ForumCategory & {
   lastActivityAt?: string | null;
@@ -303,22 +304,28 @@ const ForumPage: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in-up">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-brand-primary">
-              Community Hub
-            </p>
-            <h1 className="mt-2 text-4xl font-extrabold text-light-primary sm:text-5xl">
-              Community Forum
-            </h1>
-            <p className="mt-3 max-w-3xl text-lg text-light-secondary">
-              Connect with fellow creators, share your workflows, and stay in the loop on
-              the latest AI breakthroughs. Dive into discussions or start a new thread to
-              get feedback from the community.
-            </p>
-          </div>
+    <>
+      <Seo
+        title="Community Forum | Mike's AI Forge"
+        description="Connect with fellow AI creators, share workflows, and discuss the latest AI breakthroughs. Join our vibrant community of builders and innovators."
+        canonicalPath="/forum"
+      />
+      <div className="animate-fade-in-up">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+          <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-widest text-brand-primary">
+                Community Hub
+              </p>
+              <h1 className="mt-2 text-4xl font-extrabold text-light-primary sm:text-5xl">
+                Community Forum
+              </h1>
+              <p className="mt-3 max-w-3xl text-lg text-light-secondary">
+                Connect with fellow creators, share your workflows, and stay in the loop on
+                the latest AI breakthroughs. Dive into discussions or start a new thread to
+                get feedback from the community.
+              </p>
+            </div>
           {currentUser && (
             <button
               type="button"
@@ -470,6 +477,7 @@ const ForumPage: React.FC = () => {
         onThreadCreated={handleThreadCreated}
       />
     </div>
+    </>
   );
 };
 

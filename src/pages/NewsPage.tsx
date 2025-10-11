@@ -8,6 +8,7 @@ import newsService from '../services/newsService';
 import { NewsArticle } from '../types';
 import { Link } from 'react-router-dom';
 import NewsCard from '../components/NewsCard';
+import Seo from '../components/Seo';
 
 interface PaginatedResponse<T> {
   items: T[];
@@ -367,20 +368,26 @@ const NewsPage: React.FC = () => {
 
   // Add debug panel in development
   return (
-    <div className="space-y-16 md:space-y-24">
-      {/* Debug Panel - Remove in production */}
-      {import.meta.env.DEV && (
-        <div className="fixed bottom-4 right-4 max-w-md max-h-96 overflow-auto bg-black/90 text-white p-4 rounded-lg text-xs z-50">
-          <h3 className="font-bold mb-2">Debug Info:</h3>
-          <pre className="whitespace-pre-wrap">{debugInfo}</pre>
-          <button
-            onClick={() => setDebugInfo('')}
-            className="mt-2 px-2 py-1 bg-red-500 rounded text-white"
-          >
-            Clear
-          </button>
-        </div>
-      )}
+    <>
+      <Seo
+        title="AI News Hub | Latest AI Tools, Trends & Breakthroughs"
+        description="Stay ahead with curated AI breakthroughs, product launches, and expert insights. Explore the latest in AI tools, industry moves, and hands-on tutorials."
+        canonicalPath="/news"
+      />
+      <div className="space-y-16 md:space-y-24">
+        {/* Debug Panel - Remove in production */}
+        {import.meta.env.DEV && (
+          <div className="fixed bottom-4 right-4 max-w-md max-h-96 overflow-auto bg-black/90 text-white p-4 rounded-lg text-xs z-50">
+            <h3 className="font-bold mb-2">Debug Info:</h3>
+            <pre className="whitespace-pre-wrap">{debugInfo}</pre>
+            <button
+              onClick={() => setDebugInfo('')}
+              className="mt-2 px-2 py-1 bg-red-500 rounded text-white"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
       {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl border border-border-dark bg-gradient-to-br from-dark-secondary via-dark-secondary to-black/80 px-6 py-16 md:px-12 md:py-24">
@@ -663,6 +670,7 @@ const NewsPage: React.FC = () => {
         </aside>
       </section>
     </div>
+    </>
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Seo from '../components/Seo';
 import { Link, useParams } from 'react-router-dom';
 import * as newsService from '../services/newsService';
 import type { NewsArticle } from '../types';
@@ -112,31 +113,7 @@ const NewsArticlePage: React.FC = () => {
     };
   }, [article]);
 
-  useEffect(() => {
-    if (!article) return;
-    const previousTitle = document.title;
-    const metaTag = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    const previousDescription = metaTag?.getAttribute('content') ?? '';
-    let descriptionMeta = metaTag;
-    if (!descriptionMeta) {
-      descriptionMeta = document.createElement('meta');
-      descriptionMeta.setAttribute('name', 'description');
-      document.head.appendChild(descriptionMeta);
-    }
-    document.title = `${article.title} | Traycer.AI News`;
-    descriptionMeta.setAttribute('content', article.summary || article.title);
-    const createdMeta = !metaTag;
-    return () => {
-      document.title = previousTitle;
-      if (descriptionMeta) {
-        if (createdMeta) {
-          descriptionMeta.remove();
-        } else {
-          descriptionMeta.setAttribute('content', previousDescription);
-        }
-      }
-    };
-  }, [article]);
+
 
   const readingTime = useMemo(() => {
     if (!article?.content) return null;
@@ -165,7 +142,7 @@ const NewsArticlePage: React.FC = () => {
   const handleShare = async (platform: 'twitter' | 'linkedin' | 'copy') => {
     if (!article) return;
     const url = window.location.href;
-    const text = `${article.title} — via Traycer.AI`;
+    const text = `${article.title} — via Mike’s AI Forge`;
     if (platform === 'copy') {
       try {
         await navigator.clipboard.writeText(url);
@@ -255,6 +232,35 @@ const NewsArticlePage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 lg:px-0 py-12 lg:py-16">
+      {article && (
+        <Seo
+          title={`${article.title} | Mikes AI Forge News`}
+          description={article.summary || article.title}
+          image={article.imageUrl}
+          canonicalPath={`/news/${article.slug}`}
+          jsonLd={[
+            {
+              "@context": "https://schema.org",
+              "@type": "NewsArticle",
+              headline: article.title,
+              datePublished: article.publishedAt,
+              image: article.imageUrl ? [article.imageUrl] : undefined,
+              author: { "@type": "Organization", name: "Mikes AI Forge" },
+              publisher: { "@type": "Organization", name: "Mikes AI Forge" },
+              description: article.summary || article.title,
+              mainEntityOfPage: `${window.location.origin}/#/news/${article.slug}`
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "News", item: `${window.location.origin}/#/news` },
+                { "@type": "ListItem", position: 2, name: article.title, item: `${window.location.origin}/#/news/${article.slug}` }
+              ]
+            }
+          ]}
+        />
+      )}
       <nav className="text-sm text-light-tertiary flex flex-wrap items-center gap-2 mb-8">
         <Link to="/news" className="hover:text-brand-primary transition">
           News

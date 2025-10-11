@@ -28,6 +28,11 @@ export interface Utility {
   icon: string;
   category?: string;
   subcategory?: string;
+  badge?: 'NEW' | 'POPULAR' | 'PRO' | 'BETA';
+  estimatedTime?: string;
+  difficulty?: 'Easy' | 'Medium' | 'Hard';
+  steps?: string[];
+  useCases?: string[];
 }
 
 export interface UtilityCategory {

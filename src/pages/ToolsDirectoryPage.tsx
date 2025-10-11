@@ -6,6 +6,7 @@ import { ToolCardSkeleton } from '../components/Skeletons';
 import Pagination from '../components/Pagination';
 import { toArray } from '../utils/toArray';
 import { Tool } from '../types';
+import Seo from '../components/Seo';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -58,6 +59,11 @@ const ToolsDirectoryPage: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
+      <Seo
+        title="AI Tools Directory | Mike’s AI Forge"
+        description="Search and filter Mike’s hand-picked AI tools."
+        canonicalPath="/tools"
+      />
       <div className="text-center mb-12">
         <h1 className="text-4xl font-extrabold tracking-tight text-light-primary sm:text-5xl">AI Tools Directory</h1>
         <p className="mt-3 max-w-2xl mx-auto text-xl text-light-secondary sm:mt-4">

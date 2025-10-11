@@ -686,3 +686,303 @@ ${transcript}
   const results = JSON.parse(jsonStr);
   return results as PresentationFeedback;
 };
+
+// New Utility Functions - Phase 2
+export const generateResumeOptimization = async (jobDescription: string, currentResume: string, systemInstruction?: string): Promise<any> => {
+  if (!ai) throw new Error("AI service is not configured. Please set your API key.");
+  
+  const prompt = `You are an expert career coach and resume writer. Analyze the following job description and help optimize a resume to match it.
+
+Job Description:
+---
+${jobDescription}
+---
+
+Current Resume/Experience (if provided):
+---
+${currentResume || 'No current resume provided. Generate suggestions based on job requirements.'}
+---
+
+Generate:
+1. An optimized professional summary (3-4 sentences)
+2. A list of 8-12 key skills to highlight that match the job requirements
+3. 5-7 tailored experience bullet points that emphasize relevant achievements
+4. 3-5 recommendations for improving the application
+
+Your response must be a valid JSON object.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      ...generationConfig,
+      safetySettings,
+      systemInstruction,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          optimizedSummary: { type: Type.STRING, description: 'A professional summary tailored to the job.' },
+          keySkills: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'A list of key skills to highlight.'
+          },
+          tailoredExperience: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Experience bullet points tailored to the job.'
+          },
+          recommendations: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Actionable recommendations for the application.'
+          }
+        },
+        required: ["optimizedSummary", "keySkills", "tailoredExperience", "recommendations"]
+      }
+    }
+  });
+
+  const jsonStr = response.text.trim();
+  return JSON.parse(jsonStr);
+};
+
+export const generateBlogFromTranscript = async (transcript: string, systemInstruction?: string): Promise<any> => {
+  if (!ai) throw new Error("AI service is not configured. Please set your API key.");
+  
+  const prompt = `You are a professional content writer. Transform the following voice transcript or speech into a well-structured, engaging blog post.
+
+Transcript:
+---
+${transcript}
+---
+
+Create a complete blog post with:
+1. A catchy, SEO-friendly title
+2. An engaging introduction (2-3 paragraphs)
+3. A well-structured body with proper headings and paragraphs
+4. A compelling conclusion with a call-to-action
+5. 5-8 relevant tags/keywords
+
+Format the body with proper headings using markdown-style syntax (## Heading).
+Your response must be a valid JSON object.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      ...generationConfig,
+      safetySettings,
+      systemInstruction,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING, description: 'An engaging blog post title.' },
+          introduction: { type: Type.STRING, description: 'An introduction section (2-3 paragraphs).' },
+          body: { type: Type.STRING, description: 'The main body content with headings.' },
+          conclusion: { type: Type.STRING, description: 'A compelling conclusion with CTA.' },
+          tags: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Relevant tags and keywords.'
+          }
+        },
+        required: ["title", "introduction", "body", "conclusion", "tags"]
+      }
+    }
+  });
+
+  const jsonStr = response.text.trim();
+  return JSON.parse(jsonStr);
+};
+
+export const analyzeCSVData = async (csvData: string, question: string, systemInstruction?: string): Promise<any> => {
+  if (!ai) throw new Error("AI service is not configured. Please set your API key.");
+  
+  const prompt = `You are a data analyst. Analyze the following CSV data and provide insights.
+
+CSV Data:
+---
+${csvData}
+---
+
+${question ? `Specific Question: ${question}` : ''}
+
+Provide:
+1. A summary of the data
+2. 5-7 key insights
+3. 3-5 trends or patterns
+4. 3-5 chart/visualization suggestions with descriptions
+5. 3-5 actionable recommendations
+
+Your response must be a valid JSON object.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      ...generationConfig,
+      safetySettings,
+      systemInstruction,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          summary: { type: Type.STRING, description: 'A summary of the data.' },
+          keyInsights: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Key insights from the data.'
+          },
+          trends: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Trends and patterns identified.'
+          },
+          chartSuggestions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING, description: 'Chart type (e.g., Bar Chart, Line Graph).' },
+                title: { type: Type.STRING, description: 'Chart title.' },
+                description: { type: Type.STRING, description: 'What the chart should show.' }
+              },
+              required: ["type", "title", "description"]
+            },
+            description: 'Visualization recommendations.'
+          },
+          recommendations: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Actionable recommendations.'
+          }
+        },
+        required: ["summary", "keyInsights", "trends", "chartSuggestions", "recommendations"]
+      }
+    }
+  });
+
+  const jsonStr = response.text.trim();
+  return JSON.parse(jsonStr);
+};
+
+export const optimizeLinkedInPost = async (postContent: string, goal: string, systemInstruction?: string): Promise<any> => {
+  if (!ai) throw new Error("AI service is not configured. Please set your API key.");
+  
+  const prompt = `You are a LinkedIn content strategist. Analyze and optimize the following LinkedIn post to ${goal}.
+
+Original Post:
+---
+${postContent}
+---
+
+Goal: ${goal}
+
+Provide:
+1. A score (0-100) for the original post
+2. An optimized version of the post
+3. A score (0-100) for the optimized post
+4. 5-7 specific improvements made
+5. 5-8 relevant hashtags
+6. A compelling call-to-action
+7. 3-5 engagement tips
+
+Your response must be a valid JSON object.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      ...generationConfig,
+      safetySettings,
+      systemInstruction,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          originalScore: { type: Type.NUMBER, description: 'Score of the original post (0-100).' },
+          optimizedPost: { type: Type.STRING, description: 'The optimized LinkedIn post.' },
+          optimizedScore: { type: Type.NUMBER, description: 'Score of the optimized post (0-100).' },
+          improvements: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'List of improvements made.'
+          },
+          hashtags: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Relevant hashtags (without # symbol).'
+          },
+          callToAction: { type: Type.STRING, description: 'A compelling call-to-action.' },
+          engagementTips: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Tips to increase engagement.'
+          }
+        },
+        required: ["originalScore", "optimizedPost", "optimizedScore", "improvements", "hashtags", "callToAction", "engagementTips"]
+      }
+    }
+  });
+
+  const jsonStr = response.text.trim();
+  return JSON.parse(jsonStr);
+};
+
+export const debugCode = async (code: string, errorMessage: string, language: string, systemInstruction?: string): Promise<any> => {
+  if (!ai) throw new Error("AI service is not configured. Please set your API key.");
+  
+  const prompt = `You are an expert programmer and debugger. Help debug the following ${language} code.
+
+Code:
+---
+${code}
+---
+
+${errorMessage ? `Error Message:\n---\n${errorMessage}\n---` : ''}
+
+Provide:
+1. A clear explanation of what the error means
+2. The root cause of the issue
+3. The fixed version of the code
+4. 3-5 tips to prevent similar issues
+5. 2-4 related issues to check for
+
+Your response must be a valid JSON object.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      ...generationConfig,
+      safetySettings,
+      systemInstruction,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          errorExplanation: { type: Type.STRING, description: 'A clear explanation of the error.' },
+          rootCause: { type: Type.STRING, description: 'The root cause of the issue.' },
+          fixedCode: { type: Type.STRING, description: 'The corrected code.' },
+          preventionTips: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Tips to prevent similar issues.'
+          },
+          relatedIssues: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: 'Related issues to check for.'
+          }
+        },
+        required: ["errorExplanation", "rootCause", "fixedCode", "preventionTips", "relatedIssues"]
+      }
+    }
+  });
+
+  const jsonStr = response.text.trim();
+  return JSON.parse(jsonStr);
+};
