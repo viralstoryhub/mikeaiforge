@@ -1,7 +1,11 @@
 import { apiClient } from './apiClient';
 
 // Google Analytics 4
-const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+const GA_MEASUREMENT_ID: string | undefined =
+  import.meta.env.VITE_GA_MEASUREMENT_ID ||
+  (typeof window !== 'undefined' ? (window as any).__GA_ID__ : undefined) ||
+  // @ts-expect-error Non-VITE var is not exposed by Vite; fallback for environments that inject it
+  (import.meta.env as any).GOOGLE_ANALYTICS_ID;
 
 interface AnalyticsEvent {
   event: string;
@@ -171,7 +175,11 @@ export function initializeAnalytics(): void {
   if (typeof window === 'undefined') return;
 
   if (!GA_MEASUREMENT_ID) {
-    // No GA configured; nothing to initialize
+    // No GA configured; surface a non-fatal warning to help diagnose prod issues
+    try {
+      // eslint-disable-next-line no-console
+      console.warn('[Analytics] GA not initialized: missing GA measurement ID (VITE_GA_MEASUREMENT_ID or fallback).');
+    } catch {}
     return;
   }
 
@@ -214,6 +222,17 @@ export function updateConsent(granted: boolean): void {
 export function isAnalyticsConfigured(): boolean {
   if (typeof window === 'undefined') return false;
   return !!GA_MEASUREMENT_ID && !!window.gtag && isGAInitialized;
+}
+
+/**
+ * Lightweight runtime status for diagnostics (can be shown on an admin page)
+ */
+export function getAnalyticsStatus() {
+  return {
+    measurementIdPresent: Boolean(GA_MEASUREMENT_ID),
+    gtagDefined: typeof window !== 'undefined' && typeof window.gtag === 'function',
+    initialized: isGAInitialized,
+  };
 }
 
 // Initialize Google Analytics immediately if measurement ID is present
@@ -306,14 +325,19 @@ export const trackEvent = (eventName: string, properties: Record<string, any> = 
     window.mixpanel.track(eventName, properties);
   }
 
-  apiClient
-    .post('/analytics/track', {
-      eventName: eventName,
-      properties,
-    })
-    .catch((error) => {
-      console.error('Failed to track event on backend:', error);
-    });
+  // Only send to backend in production to reduce noise in local/dev
+  if (!import.meta.env.DEV) {
+    apiClient
+      .post('/analytics/track', {
+        eventName: eventName,
+        properties,
+      })
+      .catch((error) => {
+        if (import.meta.env.DEV) {
+          console.error('Failed to track event on backend:', error);
+        }
+      });
+  }
 };
 
 export const identifyUser = (userId: string, traits: Record<string, any> = {}): void => {

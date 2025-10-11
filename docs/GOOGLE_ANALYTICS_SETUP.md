@@ -24,9 +24,12 @@ This guide walks you through setting up Google Analytics for both tracking (fron
 2. In your project, create/update `.env` file:
    ```
    VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+   # Optional fallback used by the app if VITE_* is missing
+   GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
    ```
 3. The tracking code is already integrated in `services/analyticsService.ts`
 4. Restart your dev server to apply changes
+5. Netlify: after setting the variable, trigger “Deploy project without cache” to ensure the ID is embedded in the build.
 
 ### Frontend vs Backend Environment Variables (Quick Overview)
 - Frontend (for client-side tracking, injected by Vite):
