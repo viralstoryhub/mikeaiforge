@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
+import Seo from '../components/Seo';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { BookmarkIcon, CheckIcon } from '../components/icons/UtilityIcons';
+import ToolAlternatives from '../components/ToolAlternatives';
 
 const XIcon: React.FC = () => (
     <svg className="w-5 h-5 text-red-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -42,6 +44,39 @@ const ToolDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up">
+      <Seo
+        title={`${tool.name} — review, pros/cons | Mike’s AI Forge`}
+        description={tool.summary}
+        image={tool.logoUrl}
+        canonicalPath={`/tools/${tool.slug}`}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: tool.name,
+            description: tool.summary,
+            applicationCategory: "AI Tool",
+            operatingSystem: "Web",
+            image: tool.logoUrl,
+            url: tool.websiteUrl,
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: tool.rating,
+              bestRating: 5,
+              worstRating: 1,
+              reviewCount: 1
+            }
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Tools", item: `${window.location.origin}/#/tools` },
+              { "@type": "ListItem", position: 2, name: tool.name, item: `${window.location.origin}/#/tools/${tool.slug}` }
+            ]
+          }
+        ]}
+      />
       <Link to="/tools" className="text-sm font-semibold text-brand-primary hover:underline mb-6 inline-block">&larr; Back to Directory</Link>
       
       {/* Header */}
@@ -118,6 +153,9 @@ const ToolDetailPage: React.FC = () => {
           </ol>
         </div>
       </div>
+
+      {/* Similar Tools */}
+      <ToolAlternatives currentTool={tool} allTools={tools} maxItems={3} />
     </div>
   );
 };

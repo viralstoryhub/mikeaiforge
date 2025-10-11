@@ -34,6 +34,8 @@ const ForumCategoryPage = React.lazy(() => import('./pages/ForumCategoryPage'));
 const ForumThreadPage = React.lazy(() => import('./pages/ForumThreadPage'));
 const NewsPage = React.lazy(() => import('./pages/NewsPage'));
 const NewsArticlePage = React.lazy(() => import('./pages/NewsArticlePage'));
+const ContactPage = React.lazy(() => import('./pages/ContactPage'));
+const BookCallPage = React.lazy(() => import('./pages/BookCallPage'));
 
 const TitlesHooksGenerator = React.lazy(() => import('./pages/utility/TitlesHooksGenerator'));
 const YoutubeChaptersGenerator = React.lazy(() => import('./pages/utility/YoutubeChaptersGenerator'));
@@ -46,6 +48,13 @@ const ContentRepurposer = React.lazy(() => import('./pages/utility/ContentRepurp
 const AIImageEditor = React.lazy(() => import('./pages/utility/AIImageEditor'));
 const ThumbnailGenerator = React.lazy(() => import('./pages/utility/ThumbnailGenerator'));
 const PresentationCoach = React.lazy(() => import('./pages/utility/PresentationCoach'));
+
+// New Utilities - Phase 2
+const AIResumeBuilder = React.lazy(() => import('./pages/utility/AIResumeBuilder'));
+const VoiceToBlog = React.lazy(() => import('./pages/utility/VoiceToBlog'));
+const CSVDataVisualizer = React.lazy(() => import('./pages/utility/CSVDataVisualizer'));
+const LinkedInPostOptimizer = React.lazy(() => import('./pages/utility/LinkedInPostOptimizer'));
+const CodeDebugger = React.lazy(() => import('./pages/utility/CodeDebugger'));
 
 const AdminDashboardPage = React.lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminUsersPage = React.lazy(() => import('./pages/admin/AdminUsersPage'));
@@ -99,8 +108,12 @@ const App: React.FC = () => {
                           <AdminLayout>
                             <Routes>
                               <Route path="dashboard" element={<AdminDashboardPage />} />
-                              <Route path="analytics" element={<AdminAnalyticsPage />} />
-                              <Route path="google-analytics" element={<AdminGoogleAnalyticsPage />} />
+                              {import.meta.env.VITE_ENABLE_ADMIN_ANALYTICS === 'true' && (
+                                <>
+                                  <Route path="analytics" element={<AdminAnalyticsPage />} />
+                                  <Route path="google-analytics" element={<AdminGoogleAnalyticsPage />} />
+                                </>
+                              )}
                               <Route path="users" element={<AdminUsersPage />} />
                               <Route path="tools" element={<AdminToolsPage />} />
                               <Route path="workflows" element={<AdminWorkflowsPage />} />
@@ -139,6 +152,11 @@ const App: React.FC = () => {
                               path="/utilities/presentation-coach"
                               element={<ProtectedRoute><PresentationCoach /></ProtectedRoute>}
                             />
+                            <Route path="/utilities/ai-resume-builder" element={<AIResumeBuilder />} />
+                            <Route path="/utilities/voice-to-blog" element={<VoiceToBlog />} />
+                            <Route path="/utilities/csv-data-visualizer" element={<CSVDataVisualizer />} />
+                            <Route path="/utilities/linkedin-post-optimizer" element={<LinkedInPostOptimizer />} />
+                            <Route path="/utilities/code-debugger" element={<CodeDebugger />} />
                             <Route path="/workflows" element={<WorkflowVaultPage />} />
                             <Route path="/forum" element={<ForumPage />} />
                             <Route path="/forum/:categorySlug" element={<ForumCategoryPage />} />
@@ -146,6 +164,8 @@ const App: React.FC = () => {
                             <Route path="/news" element={<NewsPage />} />
                             <Route path="/news/:slug" element={<NewsArticlePage />} />
                             <Route path="/content-studio" element={<ContentStudioPage />} />
+                            <Route path="/contact" element={<ContactPage />} />
+                            <Route path="/book" element={<BookCallPage />} />
                             <Route
                               path="/chat"
                               element={<ProtectedRoute><ChatPage /></ProtectedRoute>}

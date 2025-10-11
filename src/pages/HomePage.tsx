@@ -6,6 +6,8 @@ import ToolCard from '../components/ToolCard';
 import { ToolCardSkeleton } from '../components/Skeletons';
 import forumService from '../services/forumService';
 import newsService from '../services/newsService';
+import Seo from '../components/Seo';
+import Testimonials from '../components/Testimonials';
 type ForumCategoryPreview = {
   id: string;
   name: string;
@@ -261,8 +263,27 @@ const HomePage: React.FC = () => {
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
   };
 
+  // Simple client-side A/B test for hero variant
+  const abKey = 'ab_hero_v1';
+  const [variant] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(abKey);
+      if (saved === 'A' || saved === 'B') return saved;
+      const assigned = Math.random() < 0.5 ? 'A' : 'B';
+      localStorage.setItem(abKey, assigned);
+      return assigned;
+    } catch {
+      return 'A';
+    }
+  });
+
   return (
     <div className="space-y-24 md:space-y-32 animate-fade-in-up">
+      <Seo
+        title="Mike’s AI Forge — AI tools, workflows, forum, and news"
+        description="Battle‑tested AI tools, one‑click automations, a vibrant community forum, and curated AI news — ship faster with Mike’s AI Forge."
+        canonicalPath="/"
+      />
       {/* Hero Section */}
       <section className="text-center py-16 md:py-24 relative">
         <div className="absolute inset-0 -top-32 flex items-center justify-center pointer-events-none">
@@ -270,8 +291,17 @@ const HomePage: React.FC = () => {
         </div>
         <div className="relative">
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400">
-            <span className="block">I test it on YouTube.</span>
-            <span className="block">You deploy it in one click.</span>
+            {variant === 'A' ? (
+              <>
+                <span className="block">I test it on YouTube.</span>
+                <span className="block">You deploy it in one click.</span>
+              </>
+            ) : (
+              <>
+                <span className="block">Ship AI workflows faster.</span>
+                <span className="block">Pick the best tools with confidence.</span>
+              </>
+            )}
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-light-secondary">
             Welcome to Mike&apos;s AI Forge — your hub for battle-tested AI tools, one-click automations, a vibrant community forum, and the latest AI news curated for creators.
@@ -280,18 +310,24 @@ const HomePage: React.FC = () => {
             <Link
               to="/utilities"
               className="inline-block bg-brand-primary text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:opacity-90 transition-opacity"
+              data-analytics-event="cta_click"
+              data-analytics-props={`{"cta":"hero_try_utilities","variant":"${variant}"}`}
             >
               Try Free Utilities
             </Link>
             <Link
               to="/tools"
               className="inline-block bg-transparent text-light-primary font-semibold px-8 py-3 rounded-lg border border-border-dark shadow-sm hover:bg-dark-secondary transition-colors"
+              data-analytics-event="cta_click"
+              data-analytics-props={`{"cta":"hero_browse_tools","variant":"${variant}"}`}
             >
               Browse AI Tools
             </Link>
             <Link
               to="/forum"
               className="inline-block bg-dark-secondary text-light-primary font-semibold px-8 py-3 rounded-lg border border-border-dark shadow-sm hover:border-brand-primary hover:text-white transition-colors"
+              data-analytics-event="cta_click"
+              data-analytics-props={`{"cta":"hero_join_community","variant":"${variant}"}`}
             >
               Join the Community
             </Link>
@@ -505,6 +541,11 @@ const HomePage: React.FC = () => {
             Read More News &rarr;
           </Link>
         </div>
+      </section>
+
+      {/* Testimonials */}
+      <section>
+        <Testimonials />
       </section>
 
       {/* Pillars Section */}

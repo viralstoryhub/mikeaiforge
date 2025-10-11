@@ -95,10 +95,15 @@ const AdminNewsPage: React.FC = () => {
         sortBy: sortBy,
       });
 
-      const items = response?.items ?? (Array.isArray(response) ? response : []);
+      let items: NewsArticle[] = [];
+      let meta: any = undefined;
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (response && typeof response === 'object') {
+        items = (response as any).items ?? [];
+        meta = (response as any).pagination;
+      }
       setArticles(items);
-
-      const meta = response?.pagination;
       setPagination(normalizePagination(meta, items.length));
     } catch (error: any) {
       addToast(error?.message ?? 'Failed to load news articles.', 'error');

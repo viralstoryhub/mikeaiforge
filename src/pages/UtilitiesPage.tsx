@@ -35,20 +35,108 @@ const UtilityCard: React.FC<{ utility: Utility }> = ({ utility }) => {
   const tiltRef = useTiltEffect<HTMLDivElement>();
   const IconComponent = iconMap[utility.icon];
 
+  const badgeColors = {
+    NEW: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white',
+    POPULAR: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+    PRO: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white',
+    BETA: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
+  };
+
+  const difficultyColors = {
+    Easy: 'text-green-400',
+    Medium: 'text-yellow-400',
+    Hard: 'text-red-400',
+  };
+
   return (
     <div ref={tiltRef} className="tilt-card h-full group">
       <Link
         to={utility.path}
-        className="block p-6 bg-dark-secondary rounded-lg border border-border-dark group-hover:border-brand-primary/50 transition-colors duration-300 h-full relative overflow-hidden glare-effect"
+        className="block p-6 bg-dark-secondary rounded-lg border border-border-dark group-hover:border-brand-primary/50 transition-all duration-300 h-full relative overflow-hidden glare-effect"
       >
-        <div className="flex items-center space-x-4">
-          <div className="flex-shrink-0 bg-dark-primary p-3 rounded-lg border border-border-dark">
+        {/* Badge */}
+        {utility.badge && (
+          <div className="absolute top-3 right-3">
+            <span className={`${badgeColors[utility.badge]} text-xs font-bold px-2.5 py-1 rounded-full shadow-lg`}>
+              {utility.badge}
+            </span>
+          </div>
+        )}
+
+        {/* Icon and Title */}
+        <div className="flex items-start space-x-4 mb-4">
+          <div className="flex-shrink-0 bg-dark-primary p-3 rounded-lg border border-border-dark group-hover:scale-110 transition-transform duration-300">
             {IconComponent && <IconComponent className="w-6 h-6 text-brand-primary" />}
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-light-primary group-hover:text-brand-primary">{utility.name}</h3>
-            <p className="mt-1 text-sm text-light-secondary">{utility.description}</p>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-light-primary group-hover:text-brand-primary transition-colors">
+              {utility.name}
+            </h3>
+            <p className="mt-1 text-sm text-light-secondary line-clamp-2">{utility.description}</p>
           </div>
+        </div>
+
+        {/* Time & Difficulty */}
+        {(utility.estimatedTime || utility.difficulty) && (
+          <div className="flex items-center gap-4 mb-4 text-xs">
+            {utility.estimatedTime && (
+              <div className="flex items-center gap-1.5 text-light-secondary">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{utility.estimatedTime}</span>
+              </div>
+            )}
+            {utility.difficulty && (
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-light-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className={difficultyColors[utility.difficulty]}>{utility.difficulty}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Steps */}
+        {utility.steps && utility.steps.length > 0 && (
+          <div className="mb-4 p-3 bg-dark-primary/50 rounded-lg border border-border-dark">
+            <p className="text-xs font-semibold text-brand-primary mb-2 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              How to Use:
+            </p>
+            <ol className="space-y-1">
+              {utility.steps.map((step, idx) => (
+                <li key={idx} className="text-xs text-light-secondary flex items-start gap-2">
+                  <span className="text-brand-primary font-semibold min-w-[16px]">{idx + 1}.</span>
+                  <span className="flex-1">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {/* Use Cases */}
+        {utility.useCases && utility.useCases.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {utility.useCases.map((useCase, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center text-xs px-2 py-1 rounded-full bg-brand-primary/10 text-brand-primary border border-brand-primary/20"
+              >
+                {useCase}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Hover Arrow */}
+        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
         </div>
       </Link>
     </div>
@@ -129,19 +217,103 @@ const UtilitiesPage: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-extrabold tracking-tight text-light-primary sm:text-5xl">Utility Tools</h1>
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-extrabold tracking-tight text-light-primary sm:text-5xl">
+          AI-Powered Utility Tools
+        </h1>
         <p className="mt-3 max-w-2xl mx-auto text-xl text-light-secondary sm:mt-4">
-          Get instant value with free, powerful tools for creators and marketers. No login required for your first few runs.
+          Get instant value with free, powerful tools for creators and marketers. No login required for your first 3 uses.
         </p>
       </div>
 
+      {/* Getting Started Guide */}
+      <div className="max-w-5xl mx-auto mb-10">
+        <div className="bg-gradient-to-r from-brand-primary/10 to-purple-500/10 rounded-2xl border border-brand-primary/20 p-6 backdrop-blur-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 bg-brand-primary/20 p-3 rounded-lg">
+              <svg className="w-6 h-6 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-light-primary mb-2">🚀 How It Works</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-primary text-dark-primary flex items-center justify-center text-xs font-bold">1</span>
+                  <div>
+                    <p className="font-semibold text-light-primary">Choose a Tool</p>
+                    <p className="text-light-secondary text-xs">Browse categories or search</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-primary text-dark-primary flex items-center justify-center text-xs font-bold">2</span>
+                  <div>
+                    <p className="font-semibold text-light-primary">Follow Steps</p>
+                    <p className="text-light-secondary text-xs">Each tool has clear instructions</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-primary text-dark-primary flex items-center justify-center text-xs font-bold">3</span>
+                  <div>
+                    <p className="font-semibold text-light-primary">Get Results</p>
+                    <p className="text-light-secondary text-xs">Copy, download, or share</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                  NEW = Just launched
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30">
+                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                  POPULAR = Most used
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/30">
+                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+                  PRO = Premium feature
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                  BETA = Testing phase
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-6xl mx-auto space-y-8">
+        {/* Stats Bar */}
+        <div className="flex items-center justify-center gap-6 py-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-brand-primary rounded-full animate-pulse"></div>
+            <span className="text-light-secondary">
+              <span className="text-2xl font-bold text-brand-primary">{UTILITIES_DATA.length}</span> Total Utilities
+            </span>
+          </div>
+          <div className="w-px h-6 bg-border-dark"></div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-light-secondary">
+              <span className="text-xl font-bold text-green-400">{UTILITIES_DATA.filter(u => u.badge === 'NEW').length}</span> New This Week
+            </span>
+          </div>
+          <div className="w-px h-6 bg-border-dark"></div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <span className="text-light-secondary">
+              <span className="text-xl font-bold text-purple-400">{UTILITIES_DATA.filter(u => u.badge === 'POPULAR').length}</span> Popular
+            </span>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="overflow-x-auto">
             <div className="inline-flex min-w-full gap-2">
               {categoryTabs.map((tab) => {
                 const isActive = tab.slug === activeCategory;
+                const count = tab.slug === 'all' ? UTILITIES_DATA.length : UTILITIES_DATA.filter(u => u.category === tab.slug).length;
                 return (
                   <button
                     key={tab.slug}
@@ -154,6 +326,9 @@ const UtilitiesPage: React.FC = () => {
                     }`}
                   >
                     {tab.name}
+                    <span className={`ml-1.5 text-xs ${isActive ? 'opacity-80' : 'opacity-60'}`}>
+                      ({count})
+                    </span>
                   </button>
                 );
               })}

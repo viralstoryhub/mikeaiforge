@@ -1,8 +1,14 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Header from './Header';
 import Footer from './Footer';
 import CommandPalette from './CommandPalette';
+import FloatingCTA from './FloatingCTA';
+import CookieConsent from './CookieConsent';
+import LeadMagnetModal from './LeadMagnetModal';
+import PageTransition from './PageTransition';
+import MobileBottomNav from './MobileBottomNav';
 
 const MainLayout: React.FC = () => {
   const location = useLocation();
@@ -10,12 +16,18 @@ const MainLayout: React.FC = () => {
     <div className="flex flex-col min-h-screen text-light-secondary">
       <Header />
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div key={location.pathname} className="animate-page-transition">
-          <Outlet />
-        </div>
+        <AnimatePresence mode="wait">
+          <PageTransition key={location.pathname}>
+            <Outlet />
+          </PageTransition>
+        </AnimatePresence>
       </main>
       <Footer />
+      <FloatingCTA />
+      <CookieConsent />
+      <LeadMagnetModal />
       <CommandPalette />
+      <MobileBottomNav />
     </div>
   );
 };

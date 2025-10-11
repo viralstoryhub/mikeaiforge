@@ -142,6 +142,9 @@ const Header: React.FC = () => {
               <NavLink to="/chat" className={navLinkClass}>
                 AI Assistant
               </NavLink>
+              <NavLink to="/contact" className={navLinkClass} data-analytics-event="nav_click" data-analytics-props='{"link":"contact"}'>
+                Contact
+              </NavLink>
           </nav>
           <div className="hidden md:flex items-center space-x-4">
               <button 
@@ -204,6 +207,7 @@ const Header: React.FC = () => {
                 <NavLink to="/news" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>AI News</NavLink>
                 <NavLink to="/content-studio" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Content Studio</NavLink>
                 <NavLink to="/chat" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>AI Assistant</NavLink>
+                <NavLink to="/contact" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)} data-analytics-event="nav_click" data-analytics-props='{"link":"contact"}'>Contact</NavLink>
             </div>
             <div className="pt-4 pb-3 border-t border-border-dark px-2 sm:px-3">
                 {auth?.currentUser ? (
